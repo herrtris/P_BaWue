@@ -44,6 +44,7 @@ glimpse(gruenland)
 
 # removing datasets
 rm(P_classes_ackerbau, Ph_ackerbau,Kali_ackerbau, P_classes_gruen, Ph_gruen, Kali_gruen)
+ackerbau
 
 # somehow I need to use the Gemeindenummer or name 
 Bawue_gemeinde %>% filter(GEN_2=="Stuttgart")
@@ -54,16 +55,41 @@ Bawue_gemeinde <-Bawue_gemeinde %>%  mutate(AGS_2=as.character(Bawue_gemeinde$AG
 str(Bawue_gemeinde)
 str(ackerbau)
 ackerbau <- ackerbau %>%  mutate(Gemeindenummer=as.character(ackerbau$Gemeindenummer))
+ackerbau <- ackerbau %>%  mutate(`P 2013 - 2018`=as.character(ackerbau$`P 2013 - 2018`))
+ackerbau <- ackerbau %>%  mutate(`P 2007 - 2012`=as.character(ackerbau$`P 2007 - 2012`))
+ackerbau <- ackerbau %>%  mutate(`P 2001 - 2006`=as.character(ackerbau$`P 2001 - 2006`))
+ackerbau <- ackerbau %>%  mutate(`P 1995 - 2000`=as.character(ackerbau$`P 1995 - 2000`))
+glimpse(ackerbau)
+
+ackerbau <- ackerbau %>%  mutate(`pH 2013 - 2018`=as.character(ackerbau$`pH 2013 - 2018`))
+ackerbau <- ackerbau %>%  mutate(`pH 2007 - 2012`=as.character(ackerbau$`pH 2007 - 2012`))
+ackerbau <- ackerbau %>%  mutate(`pH 2001 - 2006`=as.character(ackerbau$`pH 2001 - 2006`))
+ackerbau <- ackerbau %>%  mutate(`pH 1995 - 2000`=as.character(ackerbau$`pH 1995 - 2000`))
+
+ackerbau <- ackerbau %>%  mutate(`K 2013 - 2018`=as.character(ackerbau$`K 2013 - 2018`))
+ackerbau <- ackerbau %>%  mutate(`K 2007 - 2012`=as.character(ackerbau$`K 2007 - 2012`))
+ackerbau <- ackerbau %>%  mutate(`K 2001 - 2006`=as.character(ackerbau$`K 2001 - 2006`))
+ackerbau <- ackerbau %>%  mutate(`K 1995 - 2000`=as.character(ackerbau$`K 1995 - 2000`))
+glimpse(ackerbau)
 
 ackerbau <- ackerbau %>%  mutate(Gemeindenummer=str_pad(ackerbau$Gemeindenummer,7, pad="8"))
-ackerbau <- ackerbau %>%  mutate(AGS_2=str_pad(ackerbau$Gemeindenummer,8, pad="0"))
+ackerbau <- ackerbau %>%  mutate(Gemeindenummer=str_pad(ackerbau$Gemeindenummer,8, pad="0"))
 #P_classes_ackerbau <- P_classes_ackerbau %>%  mutate(AGS_2=as.factor(AGS_2))
+glimpse(ackerbau)
 
+ackerbau <- ackerbau %>% select(-Gemeindename.x, -Gemeindename.y)
+
+ackerbau %>% select(Gemeindenummer) %>% head(10)
+Bawue_gemeinde %>% select(AGS_2) %>% arrange(AGS_2) %>% head(10)
+ackerbau <- ackerbau %>% mutate(AGS_2=Gemeindenummer)
+ackerbau %>% select(AGS_2) %>% head(10)
 
 #Alright now it should be the same ID for Gemeinde in both files
-
 join_ackerbau<-left_join(Bawue_gemeinde, ackerbau, by="AGS_2")
 glimpse(join_ackerbau)
+
+join_ackerbau %>% select(AGS_2, Gemeindenummer, Gemeindename,`P 2013 - 2018`) %>%arrange(AGS_2)%>% head(20)
+join_ackerbau %>% select(AGS_2, Gemeindenummer, Gemeindename,`P 2013 - 2018`) %>%arrange(AGS_2)%>% tail(20)
 
 # Now the P_level is added to the dataset. Can I export this now and add it to the shape?
 getwd()
