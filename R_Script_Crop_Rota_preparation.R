@@ -18,6 +18,7 @@ library(readxl)
 #install.packages("writexl")
 library(writexl)
 library(ggplot2)
+library(tidyverse)
 
 Flaechennutzung_Nutzcode <-read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Modell-AG\\Modell-AG\\Flaechennutzung_Nutzcode.csv", sep=";") 
 
@@ -99,7 +100,11 @@ AckerschlaegeBW$ha_Kat = cut(AckerschlaegeBW$FLAECHE_HA, c(0, 2, 5, 10, 1000),
 test2$ha_Kat = cut(test2$FLAECHE_HA, c(0,2,5,10,1000), levels=c("1", "2", "5","10", "1000"))
 
 head(AckerschlaegeBW)
-AckerschlaegeBW %>% summarise(sum_ha=sum(FLAECHE_HA)) #abweichung kommt daher, dass anderer join in ARcGis zuvr geählt wrde
+
+nuts_exclude <- c("DE715", "DE27D", "DE27C", "DE27A", "DE279", "DE278", "DE277", "DE26C", "DE26A", "DE269", "DE25A", "DE256")
+AckerschlaegeBW %>% filter(!NUTS_CODE %in% nuts_exclude) %>%summarise(sum_ha=sum(FLAECHE_HA), n=n()) #abweichung kommt daher, dass anderer join in ARcGis zuvr geählt wrde
+
+## excluding  schläge outside of bawü sum_ha =738223ha n=516,479 Schläge
 
 head(test2)
 
@@ -177,6 +182,18 @@ landuse_2_sumha <-ggplot(Landuse_plots%>% group_by(NUTS_CODE)%>%summarise(sum_ha
 
 grid.arrange(landuse_2_sumha, landuse_1_sumha, ncol=1)
 
+# landuse 2  contains Nuts codes from bayern, how does it look if I exclude these
+nuts_exclude <- c("DE715", "DE27D", "DE27C", "DE27A", "DE279", "DE278", "DE277", "DE26C", "DE26A", "DE269", "DE25A", "DE256")
+Landuse_plots_BAWueonly <- Landuse_plots %>% filter(!NUTS_CODE %in% nuts_exclude)
+
+landuse_2_Bawue <-ggplot(Landuse_plots_BAWueonly, aes(NUTS_CODE))+geom_bar()+theme(axis.text.x = element_text(angle=90))+labs(title="Bawue_only_AckerschlaegeBW")
+head(Landuse_plots_BAWueonly)
+
+Landuse_plots_BAWueonly %>% summarize(sum_ha=sum(sum_ha))
+
+# ohne Nuts außerhalb 738,222 ha für ackerschlaege BW
+# eigene verschneidung  739,039.9                         # ziemlich identisch
+
 ##############################################################################################################################
 ### Landnutzung im Status Quo auf Kommunaler Ebene
 
@@ -224,7 +241,100 @@ write_xlsx(x=landuse_plots_test3, path = "C:/Users/User/OneDrive - bwedu/Dokumen
 #######################################################################################################################################################
 #######################################################################################################################################################
 
+## Preparing CropRota Output, at the moment coming from Felix's output file
+#choose.files()
 
+Rotations_felix <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Crop_Rota_Felix\\Rotationen_Felix.csv", sep=";", stringsAsFactors = T)
+str(Rotations_felix)
+
+# How many unique Combos are there
+Rotations_felix %>% distinct(Kombo) %>% count()
+
+# There are 1193 distinct crop rotations in BaWue
+Cr_bawue_distinct <- Rotations_felix %>% distinct(Kombo, Gewicht, Glied1, Glied2, Glied3, Glied4, Glied5) %>% select(Kombo:Gewicht)
+glimpse(Cr_bawue_distinct)
+
+levels(Cr_bawue_distinct$Glied1)
+levels(Cr_bawue_distinct$Glied2)
+levels(Cr_bawue_distinct$Glied3)
+levels(Cr_bawue_distinct$Glied4)
+levels(Cr_bawue_distinct$Glied5)
+summary(Cr_bawue_distinct$Gewicht)
+
+ggplot(Cr_bawue_distinct, aes(factor(Gewicht)))+ geom_bar()
+
+# WE have 5gliedrig, 4 gliedirg, 3 gliedrig und 1 gliedrg in our dataset
+# exclude eingliedrige Fruchtfolgen, eingliedrige Fruchtfolge has "-" for Glied2 to Glied5, or easier Gewicht equaling 1
+Cr_bawue_distinct <- Cr_bawue_distinct %>% filter(!Gewicht=="1")
+
+rotation_matrix <- Cr_bawue_distinct %>%  rowid_to_column()
+write_xlsx(x=rotation_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/rotation_matrix.xlsx", col_names = TRUE)
+
+crops <- levels(rotation_matrix$Glied1)
+ glied1<-rotation_matrix %>% select(rowid, Glied1, Gewicht) %>% pivot_wider(names_from = Glied1, values_from = Gewicht)
+glied2 <- rotation_matrix %>% select(rowid, Glied2, Gewicht) %>% pivot_wider(names_from = Glied2, values_from = Gewicht)
+ glied3 <- rotation_matrix %>% select(rowid, Glied3, Gewicht) %>% pivot_wider(names_from = Glied3, values_from = Gewicht)
+ glied4 <- rotation_matrix %>% select(rowid, Glied4, Gewicht) %>% pivot_wider(names_from = Glied4, values_from = Gewicht)
+ glied5 <- rotation_matrix %>% select(rowid, Glied5, Gewicht) %>% pivot_wider(names_from = Glied5, values_from = Gewicht)
+
+semi_join(glied1, glied2, by="rowid")
+
+rotation_matrix %>% pivot_wider(names_from = c(Glied1), values_from = Gewicht, values_fill = 0)
+
+
+rotation_matrix %>% select(rowid, Glied1, Gewicht) %>%pivot_longer(Glied1) %>% pivot_wider(names_from = value, values_from = Gewicht)
+
+pivotlonger_test <- rotation_matrix %>% pivot_longer(c(Glied1, Glied2, Glied3, Glied4, Glied5))
+
+Glied1<-pivotlonger_test %>%  filter(name=="Glied1") %>% 
+           pivot_wider(names_from = value, values_from = Gewicht,  values_fill = 0) %>%
+           mutate(Gr_Glied1=Gr, KG_Glied1=KG, KM_GLied1=KM, WG_Glied1=WG, 
+                  SM_Glied1=SM, WW_Glied1=WW, WR_Glied1=WR, Win_Glied1=Win,
+                  SG_Glied1=SG, HA_GLied1=Ha, ZR_Glied1=ZR, Ka_Glied1=Ka) %>%
+           select(-c("Gr":"Ka")) %>% select(-name)
+
+
+
+Glied2<- pivotlonger_test %>%  filter(name=="Glied2") %>% 
+                      pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+                      mutate(Gr_Glied2=Gr, KG_Glied2=KG, KM_GLied2=KM, WG_Glied2=WG, 
+                             SM_Glied2=SM, WW_Glied2=WW, WR_Glied2=WR, Win_Glied2=Win,
+                             SG_Glied2=SG, HA_GLied2=Ha, ZR_Glied2=ZR, Ka_Glied2=Ka) %>%
+                      select(-c("KM":"ZR")) %>% select(-name)
+
+Glied3<- pivotlonger_test %>%  filter(name=="Glied3") %>% 
+                      pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+                      mutate(Gr_Glied3=Gr, KG_Glied3=KG, KM_GLied3=KM, WG_Glied3=WG, 
+                             SM_Glied3=SM, WW_Glied3=WW, WR_Glied3=WR, Win_Glied3=Win,
+                             SG_Glied3=SG, HA_GLied3=Ha, ZR_Glied3=ZR, Ka_Glied3=Ka) %>%
+                      select(-c("Gr":"WR")) %>% select(-name)
+
+Glied4<- pivotlonger_test %>%  filter(name=="Glied4") %>% 
+                    pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+                    mutate(Gr_Glied4=Gr, KG_Glied4=KG, KM_GLied4=KM, WG_Glied4=WG, 
+                           SM_Glied4=SM, WW_Glied4=WW, WR_Glied4=WR, Win_Glied4=Win,
+                           SG_Glied4=SG, HA_GLied4=Ha, ZR_Glied4=ZR, Ka_Glied4=Ka) %>%
+                    select(-c("Gr":"-")) %>% select(-name)
+
+
+Glied5<- pivotlonger_test %>%  filter(name=="Glied5") %>% 
+                    pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+                    mutate(Gr_Glied5=Gr, KG_Glied5=KG, KM_GLied5=KM, WG_Glied5=WG, 
+                           SM_Glied5=SM, WW_Glied5=WW, WR_Glied5=WR, Win_Glied5=Win,
+                           SG_Glied5=SG, HA_GLied5=Ha, ZR_Glied5=ZR, Ka_Glied5=Ka) %>%
+                    select(-c("Gr":"-")) %>% select(-name)
+
+rotation_matrix_full <- Glied1 %>% left_join(Glied2, by="rowid") %>% left_join(Glied3, by="rowid") %>%
+                                   left_join(Glied4, by="rowid") %>% left_join(Glied5, by="rowid")
+                                  
+
+rotation_matrix_full <- rotation_matrix_full %>% select(-c(Kombo.y,Kombo.y.y,Kombo.y,Kombo.x, Kombo)) %>% mutate(CR_id=rowid) %>% select(-rowid) 
+rotation_matrix_full <- rotation_matrix_full %>% relocate(CR_id)
+
+dim(rotation_matrix_full)
+
+
+write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/rotation_matrix_full.xlsx", col_names = TRUE)
 
 
 
