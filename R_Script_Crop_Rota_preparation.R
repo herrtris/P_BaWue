@@ -149,7 +149,10 @@ head(Landuse_plots, 10)
 Landuse_plots %>% filter(NUTS_CODE=="DE111")
 #test3 %>% filter(NUTS_2=="DE111")
 
-test3 <- test2 %>% group_by(NUTS_2, AGS_0_2, Bodenguete, P.2013...2) %>% summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
+test3 <- test2 %>%filter(!Kennung=="B" | !Kennung=="Rog" | !Kennung=="KL") %>% group_by(NUTS_2, AGS_0_2, Bodenguete, P.2013...2) %>% 
+                  summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) %>% filter(!AGS_0_2 %in% kommune_filter_out)
+
+
 test3
 landuse_plots_test3<-test3
 test3 %>% filter(NUTS_2=="DE111")
@@ -235,8 +238,41 @@ write_xlsx(x=Crop_share_BW_test, path = "C:/Users/User/OneDrive - bwedu/Dokument
 write_xlsx(x=Landuse_SQ, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_SQ.xlsx", col_names = TRUE)
 write_xlsx(x=Landuse_plots, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_plots.xlsx", col_names = TRUE)
 
-write_xlsx(x=Landuse_SQ_test, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_SQ_Zentroide.xlsx", col_names = TRUE)
+write_xlsx(x=Landuse_SQ_test, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_SQ_Zentroide_.xlsx", col_names = TRUE)
 write_xlsx(x=landuse_plots_test3, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_plots_Zentroide_P.xlsx", col_names = TRUE)
+
+
+# Extracting unique Nuts_2 code and unique AGS_0_2 codes
+# to include as sets into gams
+landuse_plots_test3 %>% distinct(Bodenguete)
+kreis<-landuse_plots_test3 %>% distinct(NUTS_2)
+kommune<-landuse_plots_test3 %>% distinct(AGS_0_2)
+kommune <- kommune %>% filter(!AGS_0_2 %in% kommune_filter_out)
+
+
+
+
+
+
+write_xlsx(x=kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kreis_P.xlsx", col_names = TRUE)
+write_xlsx(x=kommune, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kommune_p.xlsx", col_names = TRUE)
+
+
+
+#### checking this file, does it contain ROG and KL and B
+### exclude these, is not in crop rotation file from felix
+glimpse(Landuse_SQ_test)
+
+Landuse_SQ_test_without_rogkl  <- Landuse_SQ_test %>% filter(!Kennung=="Rog") %>% filter(!Kennung=="KL") %>% filter(!Kennung=="B")
+glimpse(Landuse_SQ_test_without_rogkl)
+Landuse_SQ_test_without_rogkl %>% ungroup() %>%distinct(Kennung)
+
+write_xlsx(x=Landuse_SQ_test_without_rogkl, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Landuse_SQ_Zentroide_wihtoutRogKM.xlsx", col_names = TRUE)
+
+landuse_plots_test3 %>% distinct(AGS_0_2) %>% count()
+
+
+
 
 #######################################################################################################################################################
 #######################################################################################################################################################
@@ -253,6 +289,7 @@ Rotations_felix %>% distinct(Kombo) %>% count()
 # There are 1193 distinct crop rotations in BaWue
 Cr_bawue_distinct <- Rotations_felix %>% distinct(Kombo, Gewicht, Glied1, Glied2, Glied3, Glied4, Glied5) %>% select(Kombo:Gewicht)
 glimpse(Cr_bawue_distinct)
+
 
 levels(Cr_bawue_distinct$Glied1)
 levels(Cr_bawue_distinct$Glied2)
@@ -288,57 +325,182 @@ pivotlonger_test <- rotation_matrix %>% pivot_longer(c(Glied1, Glied2, Glied3, G
 
 Glied1<-pivotlonger_test %>%  filter(name=="Glied1") %>% 
            pivot_wider(names_from = value, values_from = Gewicht,  values_fill = 0) %>%
-           mutate(Gr_Glied1=Gr, KG_Glied1=KG, KM_GLied1=KM, WG_Glied1=WG, 
+           mutate(Gr_Glied1=Gr, KG_Glied1=KG, KM_Glied1=KM, WG_Glied1=WG, 
                   SM_Glied1=SM, WW_Glied1=WW, WR_Glied1=WR, Win_Glied1=Win,
-                  SG_Glied1=SG, HA_GLied1=Ha, ZR_Glied1=ZR, Ka_Glied1=Ka) %>%
+                  SG_Glied1=SG, Ha_Glied1=Ha, ZR_Glied1=ZR, Ka_Glied1=Ka) %>%
            select(-c("Gr":"Ka")) %>% select(-name)
 
 
 
 Glied2<- pivotlonger_test %>%  filter(name=="Glied2") %>% 
                       pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
-                      mutate(Gr_Glied2=Gr, KG_Glied2=KG, KM_GLied2=KM, WG_Glied2=WG, 
+                      mutate(Gr_Glied2=Gr, KG_Glied2=KG, KM_Glied2=KM, WG_Glied2=WG, 
                              SM_Glied2=SM, WW_Glied2=WW, WR_Glied2=WR, Win_Glied2=Win,
-                             SG_Glied2=SG, HA_GLied2=Ha, ZR_Glied2=ZR, Ka_Glied2=Ka) %>%
+                             SG_Glied2=SG, Ha_Glied2=Ha, ZR_Glied2=ZR, Ka_Glied2=Ka) %>%
                       select(-c("KM":"ZR")) %>% select(-name)
 
 Glied3<- pivotlonger_test %>%  filter(name=="Glied3") %>% 
                       pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
-                      mutate(Gr_Glied3=Gr, KG_Glied3=KG, KM_GLied3=KM, WG_Glied3=WG, 
+                      mutate(Gr_Glied3=Gr, KG_Glied3=KG, KM_Glied3=KM, WG_Glied3=WG, 
                              SM_Glied3=SM, WW_Glied3=WW, WR_Glied3=WR, Win_Glied3=Win,
-                             SG_Glied3=SG, HA_GLied3=Ha, ZR_Glied3=ZR, Ka_Glied3=Ka) %>%
+                             SG_Glied3=SG, Ha_Glied3=Ha, ZR_Glied3=ZR, Ka_Glied3=Ka) %>%
                       select(-c("Gr":"WR")) %>% select(-name)
 
 Glied4<- pivotlonger_test %>%  filter(name=="Glied4") %>% 
                     pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
-                    mutate(Gr_Glied4=Gr, KG_Glied4=KG, KM_GLied4=KM, WG_Glied4=WG, 
+                    mutate(Gr_Glied4=Gr, KG_Glied4=KG, KM_Glied4=KM, WG_Glied4=WG, 
                            SM_Glied4=SM, WW_Glied4=WW, WR_Glied4=WR, Win_Glied4=Win,
-                           SG_Glied4=SG, HA_GLied4=Ha, ZR_Glied4=ZR, Ka_Glied4=Ka) %>%
+                           SG_Glied4=SG, Ha_Glied4=Ha, ZR_Glied4=ZR, Ka_Glied4=Ka) %>%
                     select(-c("Gr":"-")) %>% select(-name)
 
 
 Glied5<- pivotlonger_test %>%  filter(name=="Glied5") %>% 
                     pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
-                    mutate(Gr_Glied5=Gr, KG_Glied5=KG, KM_GLied5=KM, WG_Glied5=WG, 
+                    mutate(Gr_Glied5=Gr, KG_Glied5=KG, KM_Glied5=KM, WG_Glied5=WG, 
                            SM_Glied5=SM, WW_Glied5=WW, WR_Glied5=WR, Win_Glied5=Win,
-                           SG_Glied5=SG, HA_GLied5=Ha, ZR_Glied5=ZR, Ka_Glied5=Ka) %>%
+                           SG_Glied5=SG, Ha_Glied5=Ha, ZR_Glied5=ZR, Ka_Glied5=Ka) %>%
                     select(-c("Gr":"-")) %>% select(-name)
 
 rotation_matrix_full <- Glied1 %>% left_join(Glied2, by="rowid") %>% left_join(Glied3, by="rowid") %>%
                                    left_join(Glied4, by="rowid") %>% left_join(Glied5, by="rowid")
                                   
 
-rotation_matrix_full <- rotation_matrix_full %>% select(-c(Kombo.y,Kombo.y.y,Kombo.y,Kombo.x, Kombo)) %>% mutate(CR_id=rowid) %>% select(-rowid) 
+# creation of CR id out of row_id
+rotation_matrix_full <- rotation_matrix_full %>% select(-c(Kombo.y,Kombo.y.y,Kombo.y,Kombo.x, Kombo, Kombo.x.x)) %>% 
+                        mutate(CR_id=rowid) %>% select(-rowid) 
 rotation_matrix_full <- rotation_matrix_full %>% relocate(CR_id)
 
 dim(rotation_matrix_full)
 
 
-write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/rotation_matrix_full.xlsx", col_names = TRUE)
+
+
+#### Write CR_Glieder
+
+CR_Glieder <- colnames(rotation_matrix_full) %>% as_tibble()
+CR_Glieder <- CR_Glieder[-1,]
+CR_Glieder <- CR_Glieder %>% rename(Cr_Glieder=value)
+
+
+### Verknuepfe Info zwischen CR_id=row_id und Kommunen_information
+head(rotation_matrix)
+head(Rotations_felix)
+
+kommune_CRid <- Rotations_felix %>% left_join(rotation_matrix, by="Kombo")
+kommune_CRid <- kommune_CRid %>% select(rowid, LAU_ID)
+
+
+
+## the parameter here will be linked to the set kommune in GAMS so I better check if they match
+kommune_CRid
+kommune
+
+kommune_filter_out<-setdiff(kommune$AGS_0_2, kommune_CRid$LAU_ID)
+# okay they do not match because of 8 kommunen... where are these eight
+kommune_CRid %>% filter(LAU_ID=="8136040")
+kommune %>% filter(AGS_0_2=="8136040")
+
+## These 6 need to be filtered out in the files coming from my own GIS work
+kommune_2 <- kommune %>% filter(!AGS_0_2 %in% kommune_filter_out)
 
 
 
 
+
+
+
+## Verknüpfung mit crops
+crops <- Cr_bawue_distinct %>% distinct(Glied1)
+crop_CR_matrix <- rotation_matrix_full %>% slice(1:12)
+crop_CR_matrix <- cbind(crops, crop_CR_matrix)
+crop_CR_matrix <- crop_CR_matrix %>% select(-CR_id)
+crop_CR_matrix
+
+
+   
+# crop_CR_matrix %>%mutate(Gr_Glied1 = if_else(Glied1=="Gr", 1,0))%>%
+#         mutate(KG_Glied1 = if_else(Glied1 =="KG", 1,0))%>%
+#         mutate(KM_GLied1 = if_else(Glied1=="KM", 1,0))%>%
+#         mutate(WG_Glied1 = if_else(Glied1=="WG", 1,0))%>%
+#         mutate(SM_Glied1 = if_else(Glied1=="SM", 1,0))%>%
+#         mutate(WW_Glied1 = if_else(Glied1=="WW", 1,0))%>%
+#         mutate(WR_Glied1 = if_else(Glied1=="WR", 1,0))%>%
+#         mutate(Win_Glied1 = if_else(Glied1=="Win", 1,0))%>%
+#         mutate(SG_Glied1 = if_else(Glied1=="SG", 1,0))%>%
+#         mutate(HA_GLied1 = if_else(Glied1=="Ha", 1,0))%>%
+#         mutate(ZR_Glied1 = if_else(Glied1=="ZR", 1,0))%>%
+#         mutate(Ka_Glied1 = if_else(Glied1=="Ka", 1,0))%>%
+
+# another way of doing this
+# test %>%
+#   mutate(Gr_Glied1 = case_when(Gr_Glied1 > 0 & Glied1 == "GR" ~ 1,
+#                                TRUE ~ 0),
+#          KG_Glied1 = case_when(KG_Glied1 > 0 & Glied1 == "KG" ~ 1,
+#                                TRUE ~ 0),
+#          KM_Glied1 = case_when(KM_GLied1 > 0 & Glied1 == "KM" ~ 1,
+#                                TRUE ~ 0))
+
+## the code here is standing on its own it is creating the whole dataframe
+## valuable code wenn ich nur bezüge herstellen muss
+
+values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+for (value in values_list) {
+  column_name1 = paste0(value, "_Glied1")
+  column_name2 = paste0(value, "_Glied2")
+  column_name3 = paste0(value, "_Glied3")
+  column_name4 = paste0(value, "_Glied4")
+  column_name5 = paste0(value, "_Glied5")
+  crop_CR_matrix = crop_CR_matrix %>%
+    mutate(!!column_name1 := if_else(Glied1 == value, 1, 0),
+           !!column_name2 := if_else(Glied1 == value, 1, 0),
+           !!column_name3 := if_else(Glied1 == value, 1, 0),
+           !!column_name4 := if_else(Glied1 == value, 1, 0),
+           !!column_name5 := if_else(Glied1 == value, 1, 0))
+}
+
+crop_CR_matrix <- crop_CR_matrix %>% -select(column_name1)
+
+str(crop_CR_matrix)
+write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/crop_CR_matrix.xlsx", col_names = TRUE)
+
+
+
+# # Getting the matrix done
+# values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+#  for (value in values_list) {
+#    column_name = paste0(value, "_Glied1")
+#    crop_CR_matrix = crop_CR_matrix %>% mutate(!!column_name := if_else(Glied1 == value, 1, 0))
+#  }  
+#   
+# values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+#   for (value in values_list) {
+#   column_name = paste0(value, "_Glied2")
+#   crop_CR_matrix = crop_CR_matrix %>% mutate(!!column_name := if_else(Glied1 == value, 1, 0))
+# }   
+#   
+# 
+# values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+# for (value in values_list) {
+#   column_name = paste0(value, "_Glied3")
+#   crop_CR_matrix = crop_CR_matrix %>% mutate(!!column_name := if_else(Glied1 == value, 1, 0))
+# }  
+# 
+# 
+# values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+# for (value in values_list) {
+#   column_name = paste0(value, "_Glied4")
+#   crop_CR_matrix = crop_CR_matrix %>% mutate(!!column_name := if_else(Glied1 == value, 1, 0))
+# }  
+# 
+# 
+# values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka")
+# for (value in values_list) {
+#   column_name = paste0(value, "_Glied5")
+#   crop_CR_matrix = crop_CR_matrix %>% mutate(!!column_name := if_else(Glied1 == value, 1, 0))
+# }  
+
+# check it 
+crop_CR_matrix
 
 
 
