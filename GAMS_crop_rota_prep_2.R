@@ -57,19 +57,37 @@ zentroid_p %>% select(Schlag_ID) %>% count()
 ######################################################################################################################################################
 # Landuseplots
 
-Landuse_plots_P <- zentroid_p  %>% group_by(NUTS_2, AGS_0_2, Bodenguete, P.2013...2) %>% 
+Landuse_plots_P <- zentroid_p  %>% group_by(NUTS_2, Bodenguete) %>% 
                        summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
 
-head(Landuse_plots_P)
+# if I want to add P fer plot the group_by from above needs to include P
+Landuse_plots_P_added <- zentroid_p  %>% group_by(NUTS_2, Bodenguete, P.2013...2) %>% 
+  summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
 
-Landuse_plots_P <- Landuse_plots_P[,c(6,1,3,2,4,5)]
+
+
+head(Landuse_plots_P)
+summary(Landuse_plots_P)
+
+Landuse_plots_P <- Landuse_plots_P[,c(4,1,2,3)]
+
+
 
 
 #####################################################################################################################################################
 ### Landnutzung im Status Quo auf Kommunaler Ebene
 
-Landuse_SQ_P <- zentroid_p %>% group_by(AGS_0_2, Kennung) %>% summarise(sum_ha=sum(FLAECHE_HA))
+Landuse_SQ_P <- zentroid_p %>% group_by(NUTS_2, Kennung) %>% summarise(sum_ha=sum(FLAECHE_HA))
 head(Landuse_SQ_P)
+View(Landuse_SQ_P)
+Landuse_SQ_P %>% group_by(Kennung)%>%count(Kennung)
+
+Landuse_SQ_P<- Landuse_SQ_P %>% filter(!Kennung=="B")
+
+
+Landuse_SQ_P %>% ungroup%>% summarize(sum(sum_ha))
+# in total for all bawue gibt es 706,121 ha - ohne Brache
+
 
 ###################################################################################################################################################
 ### Kulturanteile auf Kreisebene für CropRota
@@ -80,6 +98,161 @@ Crop_share_BW_P <- zentroid_p %>% filter(Kennung !="B") %>% group_by(NUTS_2) %>%
 
 head(zentroid_p)
 
+
+## wie hoch ist der MJNEL Bedarf im status quo?
+head(zentroid_p)
+
+
+
+futterbau_bedarf <- 
+zentroid_p %>%
+  mutate(Bodenguete = ifelse(NATBOD %in% c("1,0"), "niedrig",
+                      ifelse(NATBOD %in% c("1,5"), "niedrig",
+                      ifelse(NATBOD %in% c( "2,0"), "mittel",
+                      ifelse(NATBOD %in% c("2,5"), "mittel",
+                      ifelse(NATBOD %in% c( "3,0"), "hoch",    
+                      ifelse(NATBOD %in% c( "3,5"), "hoch",    
+                      ifelse(NATBOD %in% c( "4,0"), "hoch","mittel")))))))) %>% select(NUTS_2, Schlag_ID, FLAECHE_HA, Kennung,Bodenguete) 
+
+
+#futterbau_bedarf<-  futterbau_bedarf  %>% group_by(NUTS_2, Bodenguete) %>% 
+#                    summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
+
+#futterbau_bedarf<- futterbau_bedarf[,c(4,1,2,3)]
+
+
+
+#futterbau_bedarf <-   futterbau_bedarf %>% filter(Kennung %in% c("SM", "KG", "Gr"))
+head(futterbau_bedarf)
+
+### Wieviel MJNEL wird produziert je Flaeche? How are plot_id und sclag_id behaving towards each other
+
+yields_soilqual_Fut %>% rename(Kennung=`crop abrre`, Bodenguete="Intensitaet")
+
+
+crops<-crop_vector %>% as_tibble()%>% rename(crop="value")
+kreis
+yields_soilqual_Fut
+yields_soilqual_Ack
+
+one <- yields_soilqual_Ack %>% select(`crop abrre`,Intensitaet)
+two <- yields_soilqual_Fut %>% select(`crop abrre`, Intensitaet)
+
+Energie_pro_ha <- rbind(one, two)
+
+new_df <- expand.grid(`crop abrre`=unique(Energie_pro_ha$`crop abrre`),
+                      Intensitaet= unique(Energie_pro_ha$Intensitaet),
+                      county=kreis$NUTS_2) %>% as_tibble()
+
+
+Energie_proha<- left_join(new_df, yields_soilqual_Fut, by=c("crop abrre", "Intensitaet"))
+Energie_proha <- Energie_proha %>% replace_na(list(`Ertrag (10 MJ NEL/ha)`=0))
+
+### write out Energiebedarf je crop, intensity and county
+write_xlsx(x=Energie_proha, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Energie_proha.xlsx", col_names = TRUE)
+
+head(futterbau_bedarf)
+
+
+futterbau_bedarf_joined<-futterbau_bedarf %>% left_join(yields_soilqual_Fut %>% rename(Kennung=`crop abrre`, Bodenguete="Intensitaet"), by=c("Kennung", "Bodenguete"))
+dim(futterbau_bedarf_joined)
+head(futterbau_bedarf_joined)
+
+factor(futterbau_bedarf$Bodenguete)
+factor(yields_soilqual_Fut$Intensitaet)
+
+
+#futterbau_bedarf_joined<-futterbau_bedarf %>% left_join(yields_soilqual_Fut %>% rename(Kennung=`crop abrre`, Bodenguete="Intensitaet"), by=c("Kennung", "Bodenguete"))
+dim(futterbau_bedarf_joined)
+dim(futterbau_bedarf)
+summary(futterbau_bedarf_joined)
+
+
+futterbau_bedarf_joined <-futterbau_bedarf_joined %>% replace_na(list(`Ertrag (10 MJ NEL/ha)`=0)) 
+
+
+head(futterbau_bedarf_joined)
+
+## mutate futterbau Energiebedarf je schlag
+futterbau_bedarf_joined<- futterbau_bedarf_joined %>% mutate(Energiebedarf_Schlag=FLAECHE_HA*`Ertrag (10 MJ NEL/ha)`)
+head(futterbau_bedarf_joined)
+futterbau_bedarf_joined %>% filter(is.na(Energiebedarf_Schlag))
+
+
+### Fuege den Deckungsbeitrag je ha pro Kultur hinzu
+### Deckungsbeiträge kommen aus extracted calculation data, muessen zur not bei anderen Runs angepasst werden
+
+# futterbau_bedarf_joined %>% filter(Kennung=="KG")
+
+# Deckungsbeiträge eingelsen, nicht mehr sinnvoll
+# futterbau_bedarf_joined <-futterbau_bedarf_joined %>% mutate(DB_ha=case_when(
+#                                     Kennung=='KG' & Bodenguete=='niedrig' ~ c(-123),
+#                                     Kennung=='KG' & Bodenguete=='mittel'  ~ c(-233),
+#                                     Kennung=='KG' & Bodenguete=='hoch'    ~ c(-343),
+#                                     Kennung=='SM' & Bodenguete=='niedrig' ~ c(-223),
+#                                     Kennung=='SM' & Bodenguete=='mittel'  ~ c(-114),
+#                                     Kennung=='SM' & Bodenguete=='hoch'    ~ c(-20),
+#                                     Kennung=='Gr' & Bodenguete=='niedrig' ~ c(-8),
+#                                     Kennung=='Gr' & Bodenguete=='mittel'  ~ c(-32),
+#                                     Kennung=='Gr' & Bodenguete=='hoch'    ~ c(-59),
+# ))
+
+
+
+futterbau_bedarf_joined   <-futterbau_bedarf_joined %>% filter(!Kennung=="B")
+# head(futterbau_bedarf_joined)
+# summary(futterbau_bedarf_joined)
+# 
+# 
+# Energiebedarf <- futterbau_bedarf_joined %>% select(NUTS_2, Bodenguete, Kennung, `Ertrag (10 MJ NEL/ha)`)%>%
+#                                              group_by(NUTS_2, Bodenguete, Kennung)
+# 
+# summary(Energiebedarf)
+# head(Energiebedarf)
+# Energiebedarf<-Energiebedarf %>% replace_na(list(`Ertrag (10 MJ NEL/ha)`=0)) 
+
+# wie kann ich die plot_id adden? naja plot_id ist einfach die stufung, also jeder kreis 
+# hat in summe 3 plot_id also
+# hab hier 2701 plot_ids wie kommt die Zahl zu Stande?
+# FEHLER in landuse_plots ist nochmal unterteilt auf die Kommune, bruach ich jedoch nicht
+#           bei der momentanen Modellspezifaikation - now corrected!
+
+# add plot_id
+Energiebedarf
+
+
+
+
+
+
+# hier gabs nen coolen befehl von linkedin ne varibale zu nem factor zu machen
+# ## check it out
+# levels(futterbau_bedarf_joined$Kennung)
+# 
+# # bauen von futterbau_ha_energie(crop, soil_qual, counties)
+# futterbau_bedarf_joined %>% select(NUTS_2, Bodenguete, Kennung, `Ertrag (10 MJ NEL/ha)`) %>%
+#                             group_by(NUTS_2, Bodenguete, Kennung)
+# 
+# 
+# 
+# # Deckungsbeitrag je schlag
+# futterbau_bedarf_joined  <-  futterbau_bedarf_joined %>% mutate(DB_Schlag=DB_ha*FLAECHE_HA)
+# 
+# # Gesamt negativer DB nötig für die Tierhaltung
+# futterbau_bedarf_DB <-  futterbau_bedarf_joined %>% group_by(NUTS_2) %>% summarize(DB_tierhaltung_Kreis_MJNEL= sum(DB_Schlag))
+
+
+
+
+# wie ist die VErteilung von Futterbau auf Bodenguete?
+futterbau_bedarf_kreis <- futterbau_bedarf_joined %>% select(NUTS_2, Energiebedarf_Schlag) %>% group_by(NUTS_2) %>% summarize(Energiebedarf_kreis_MJNEL=sum(Energiebedarf_Schlag))
+head(futterbau_bedarf_kreis)  
+  
+write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/futterbau_bedarf_kreis.xlsx", col_names = TRUE)
+write_xlsx(x=futterbau_bedarf_DB, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/futterbau_bedarf_DB.xlsx", col_names = TRUE)
+
+
+
 #####################################################################################################################################################
 ### Writing out files 
 ### crop_share_BW_P - crop_share_bw_Zentroide.xlsx
@@ -89,6 +262,17 @@ head(zentroid_p)
 write_xlsx(x=Crop_share_BW_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_share_bw_Zentroide.xlsx", col_names = TRUE)
 write_xlsx(x=Landuse_SQ_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Landuse_SQ_P.xlsx", col_names = TRUE)
 write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Landuse_plots_P.xlsx", col_names = TRUE)
+
+## write out county_Flaeche(counties) #calculated in GAMS
+## Die Flaechenrestriktion auf Kriesebene
+county_ha<-Landuse_plots_P %>%group_by(NUTS_2) %>%summarize(sum_ha)
+county_ha<-county_ha %>% group_by(NUTS_2) %>% summarize(sum=sum(sum_ha))
+
+# Restriktion der Kulturen. Summe der Kulturen muss die gleiche beliben
+Landuse_SQ_P 
+
+
+
 
 
 ###################################################################################################################################################
@@ -248,20 +432,44 @@ for (value in values_list) {
 }
 
 
+crop_CR_matrix<-crop_CR_matrix %>% rename(crop=Glied1)
+
+#check
+CR_Glieder
+CR_Glieder_cropmatrix <- colnames(crop_CR_matrix) %>% as_tibble()
+CR_Glieder_cropmatrix<-CR_Glieder_cropmatrix[-1,]
+
+setdiff(CR_Glieder$Cr_Glieder, CR_Glieder_cropmatrix$value)
+setdiff(CR_Glieder_cropmatrix$value, CR_Glieder$Cr_Glieder)
+
+crop<- crop_CR_matrix[,1]
+crop
+
+crop_gams<-c("Gr", "Ha", "Ka", "KG", "KM", "SG", "SM", "WG", "Win", "WR", "WW", "ZR", "Rog", "KL")
+
+setdiff(crop, crop_gams)
+setdiff(crop_gams, crop)
+
+# es liegt nicht an der Belegung der sets, sets sind identisch
+
 ### Verknuepfe Info zwischen CR_id=row_id und Kommunen_information
 head(rotation_matrix)
 
-
-
-### Achtung ich hatte bei rotations_felix filter angelegt... und zwar für eingliedrige Fruchtfolgen die wurden raussortiert
-### simply switch left_join around
-#kommune_CRid <- Rotations_felix %>% left_join(rotation_matrix, by="Kombo")
 kommune_CRid <- rotation_matrix %>% left_join(Rotations_tristan, by="Kombo")
 kommune_CRid <- kommune_CRid %>% select(CRid, LAU_ID)
 kommune_CRid
 
+kommune_CRid<-kommune_CRid %>% mutate(AGS_0_2=LAU_ID)
+kommune_CRid<- kommune_CRid %>% select(-LAU_ID) %>% mutate(value=1)
+head(kommune_CRid)
 
+## difference kommunen vektor
 
+kommune_CRid <-kommune_CRid %>%pivot_wider(names_from = AGS_0_2, values_from = value, values_fill = 0)
+kommune_CRid <- kommune_CRid %>% mutate(CR_id=CRid) %>% select(-CRid) 
+kommune_CRid <-kommune_CRid[,c(45, 1:44)]
+
+summary(test)
 
 
 ##################################################################################################################################################
@@ -272,7 +480,7 @@ kommune_CRid
 write_xlsx(x=CR_Glieder, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/CR_Glieder.xlsx", col_names = FALSE)
 
 #crop_CR_matrix, connect crop rotations with crop
-write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_CR_matrix.xlsx", col_names = FALSE)
+write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_CR_matrix.xlsx", col_names = TRUE)
 
 
 #### kommune_CR_ID, welche croprot kommt in welcher kommune vor?
@@ -284,13 +492,60 @@ write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokume
 
 #######################################################################################################################################################
 ###################################################################################################################################################
-##### Harmonizing both files
+#####
 
 # crop rota files tristan
 CR_Glieder                                      #|should be ready |contains rotation glied
 crop_CR_matrix                                  #|should be ready |contains crop/rotation_glied
 rotation_matrix_full
 kommune_CRid
+
+
+### CR_id must be linked with crops, where is the CR_id coming from?
+rotation_matrix
+summary(rotation_matrix)
+head(rotation_matrix)
+
+# # explanation of the for loop
+# # For example, if crop is equal to "KM", then !!crop will be evaluated to "KM". Without the !! operator, 
+# # rename(crop := temp) would treat crop as a string, and would create a new column named "crop" instead of a column named "KM".
+# 
+# The := operator is used to assign a value to a variable. In this case, it's used to assign the values of the temp column to the column named crop (or "KM" or "WW").
+# 
+# So, rename(!!crop := temp) dynamically evaluates the value of crop, and then creates a new column with that name and assigns the values of the temp column to it.
+# This way, the loop can create columns with different names for each iteration.
+
+rotation_matrix <- Cr_bawue_distinct %>%  rowid_to_column() %>% mutate(CRid = rowid) %>% select(-rowid) %>% select(CRid, Kombo:Gewicht)
+
+crops <- c("Gr", "Ha", "Ka", "KG", "KL", "KM", "Rog", "SG", "SM", "WG", "Win", "WR", "WW", "ZR")
+result <- rotation_matrix
+for (crop in crops) {
+  temp_result <- result %>%
+    mutate(temp = ifelse(Glied1 %in% c(crop), 1, 0) |
+             ifelse(Glied2 %in% c(crop), 1, 0) |
+             ifelse(Glied3 %in% c(crop), 1, 0) |
+             ifelse(Glied4 %in% c(crop), 1, 0) |
+             ifelse(Glied5 %in% c(crop), 1, 0)) %>%
+    mutate(temp = ifelse(temp %in% TRUE, 1, 0)) %>%
+    rename(!!crop := temp)
+  print(temp_result)
+  result <- temp_result
+}
+rotation_matrix <- result
+rotation_matrix<- rotation_matrix %>% as_tibble()
+
+CR_id_crop <- rotation_matrix %>% select(CRid, Gr:ZR)
+
+##############################################################################################################################################################################
+#### write CR_id_crop
+write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/CR_id_crop.xlsx", col_names = T)
+
+###############################################################################################################################################################################
+
+
+
+
+
 
 
 # files from own production
@@ -303,6 +558,167 @@ Landuse_SQ_P
 
 
 
+####################################################################################################################################
+#####################################################################################################################################
+
+### Daten aus den Kalkulationsdaten des LEL
+### Vorbereitung für GAMS input
+
+# kulturspezifische Ertragsdaten und Preisdaten
+
+# input <- choose.files()
+#  input
+
+getwd()
+setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten")
+
+# reading data in
+######### !!!! Excel file ist gelinkt zu Marktfruechte und Futterbau Klakulationstabellen, aenderungen in diesen Tabellen veraendern die input daten
+######### !!!! Betrifft vor allem die Kostenseite, zum Beispiel Aenderung des Duengerpreises und des Dieselpreises auf 2022 Niveau
+#########      Sollte Ertragsdaten nicht betreffen
+Ackerkulturen <- read_excel("extracted_calculation_data.xlsx", sheet="Ackerkulturen")
+Futterbau <- read_excel("extracted_calculation_data.xlsx", sheet="Futterbau")
+
+excel_sheets("extracted_calculation_data.xlsx")
+
+
+glimpse(Ackerkulturen)
+glimpse(Futterbau)
+
+yields_soilqual_Ack <- Ackerkulturen %>% select(`crop abrre`, Intensitaet, `Ertrag dt/ha`)
+yields_soilqual_Ack
+yields_soilqual_Fut <- Futterbau %>% select(`crop abrre`, Intensitaet, `Ertrag (10 MJ NEL/ha)`)
+yields_soilqual_Fut
+
+
+price_crop_Ack <- Ackerkulturen %>% select(`crop abrre`, `Price €/dt`) %>% distinct(`crop abrre`, `Price €/dt`)
+price_crop_Ack
+
+
+price_crop_Fut   <- Futterbau %>% select(`crop abrre`, `Preis (€/10MJ NEL)`) 
+price_crop_Fut<- unique(price_crop_Fut[,c("crop abrre", "Preis (€/10MJ NEL)")])
+price_crop_Fut
+
+
+## writing out parameters yield and prices
+write_xlsx(x=yields_soilqual_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/yields_soilqual_Ack.xlsx", col_names = T)
+write_xlsx(x=yields_soilqual_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/yields_soilqual_Fut.xlsx", col_names = T)
+write_xlsx(x=price_crop_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/price_crop_Ack.xlsx", col_names = T)
+write_xlsx(x=price_crop_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/price_crop_Fut.xlsx", col_names = T)
+
+
+##############################################################################################################################################################################
+###############################################################################################################################################################################
+# Variable kosten !Anpassung der Dieselpreise im file
+# Dieselpreise auf 2021 Niveau
+
+variable_cost_ackerbau <- Ackerkulturen %>% select(`crop abrre`,Intensitaet,`V. Kosten (€/ha)`)
+variable_cost_futterbau <- Futterbau %>% select(`crop abrre`,Intensitaet,`V. Kosten (€/ha)`)
+
+
+## writing out variable cost parameters
+write_xlsx(x=variable_cost_ackerbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/variable_cost_ackerbau.xlsx", col_names = T)
+write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/variable_cost_futterbau.xlsx", col_names = T)
+
+#####################################################################################################################################################################################
+
+## Creating county_BG; verbindet intensity und soil_qual im GAMS script
+kreis
+Landuse_plots_P
+
+county_BG <- Landuse_plots_P %>% select(NUTS_2, Bodenguete) %>%distinct(NUTS_2, Bodenguete) %>% mutate(value=1) %>% pivot_wider(names_from = Bodenguete, values_from = value, values_fill = 0)
+county_BG  
+
+write_xlsx(x=county_BG , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/county_BG .xlsx", col_names = T)
+
+setdiff(kreis$NUTS_2, county_BG$NUTS_2)
+setdiff(county_BG$NUTS_2, kreis$NUTS_2)
+
+########################################################################################################################################################################################
+
+# Bearbeitung der Tierzahlen 
+Tierzahlen <- read_excel("Tierzahl_neu.xlsx", sheet="Tierzahlen")
+summary(Tierzahlen)
+
+
+Tierzahlen <- Tierzahlen %>% select(`NUTS-Code`, Tierart, Tierzahl)
+Tierzahlen <- Tierzahlen %>% mutate_at(vars(`NUTS-Code`,Tierart), factor)
+levels(Tierzahlen$Tierart)
+levels(Tierzahlen$`NUTS-Code`)
+
+
+## Umrechnung Tierzahl in Großvieheinheiten
+Tierzahlen <-
+Tierzahlen %>% mutate(GV_Einheiten=case_when(
+                                      Tierart=='Gef'   ~ Tierzahl*0.00377,  #Annahme Durchschnitt
+                                      Tierart=='JR'    ~ Tierzahl*0.59,     #Annahme Durschnitt
+                                      Tierart=='MV'    ~ Tierzahl*1.2,      #Annahme Milchkuh
+                                      Tierart=='Ri'    ~ Tierzahl*0.678,    #Annahme Durchscnitt
+                                      Tierart=='Schw'  ~ Tierzahl*0.14,     #Annahme Mastschweine 30-115Kg
+                                      Tierart=='Sf'    ~ Tierzahl*0.1014,   #Annahme Durchschnitt
+                                      Tierart=='Zi'    ~ Tierzahl*0.0678,   #Annahme Durchscnitt
+                                       ))
+
+## Umrechnung GV Einheit in Dungeinheiten
+
+Tierzahlen <-
+  Tierzahlen %>% mutate(Dungeinheiten=case_when(
+    Tierart=='Gef'   ~ Tierzahl*0.0075,  #Annahme Dungeinheiten je stück Durchschnitt
+    Tierart=='JR'    ~ GV_Einheiten*0.667,     #Annahme GV Durschnitt
+    Tierart=='MV'    ~ GV_Einheiten*1,      #Annahme GV
+    Tierart=='Ri'    ~ GV_Einheiten*0.667,    #Annahme GV Durchscnitt
+    Tierart=='Schw'  ~ GV_Einheiten*0.2,     #Annahme GV Durchschnitt
+    Tierart=='Sf'    ~ GV_Einheiten*0.1,   #Annahme GV
+    Tierart=='Zi'    ~ GV_Einheiten*0.1,   #Annahme GV
+  ))
+
+boxplot(Tierzahlen$Dungeinheiten)
+summary(Tierzahlen)
+
+# laut https://www.landwirtschaft.sachsen.de/dungeinheitenschluessel-15620.html
+## entspricht eine Dungeinheit dem Anfall an tierischen Exkrementen von 80kg N bzw. 70 kg P205
+
+Tierzahlen_dueng<-Tierzahlen %>% mutate(N_org=Dungeinheiten*80, P205_org_kg=Dungeinheiten*70)%>% mutate(P_org_kg=0.4364*P205_org_kg)
+summary(Tierzahlen_dueng)
+
+
+## P_org je Kreis und P_verbrauch
+Tierzahlen_dueng %>% group_by(`NUTS-Code`) %>% summarise(sum_P=sum(P_org_kg))
+Tierzahlen_dueng %>% summarise(P_org_Bawue=sum(P_org_kg/1000))
+
+
+
+## P Verbrauch je crop in abhängigkeit von soil_qual und intensitaet
+P1 <- Ackerkulturen %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
+P2 <- Futterbau %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
+
+P_Verbrauch <- rbind(P1, P2)
+P_Verbrauch
+
+# expan.grid für jeden Kreis
+
+
+new_df <- expand.grid(`crop abrre`=unique(P_Verbrauch$`crop abrre`),
+                      Intensitaet= unique(P_Verbrauch$Intensitaet),
+                      county=kreis$NUTS_2) %>% as_tibble()
+
+P_Verbrauch<- left_join(new_df, P_Verbrauch, by=c("crop abrre", "Intensitaet"))
+
+#P_Verbrauch<- P_Verbrauch[,c(4,1,2,3)]
+
+summary(P_Verbrauch)
+
+
+write_xlsx(x=P_Verbrauch , path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/P_Verbrauch.xlsx", col_names = T)
+
+
+
+
+
+# where is the P_soil class at the moment
+Landuse_SQ_P
+Landuse_plots_P
+summary(Landuse_plots_P$P.2013...2)
 
 
 
@@ -310,7 +726,5 @@ Landuse_SQ_P
 
 
 
-kommune <- kommune %>% filter(!AGS_0_2 %in% kommune_filter_out)
-# code for later harmonization with Felix crop rotations, applied to landuse_plots_p and to landuse_SQ_P
-filter(!Kennung=="B" | !Kennung=="Rog" | !Kennung=="KL") %>%
-  filter(!AGS_0_2 %in% kommune_filter_out)
+
+
