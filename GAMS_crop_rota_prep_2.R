@@ -70,6 +70,11 @@ head(Landuse_plots_P)
 summary(Landuse_plots_P)
 
 Landuse_plots_P <- Landuse_plots_P[,c(4,1,2,3)]
+check<-Landuse_plots_P %>% group_by(NUTS_2)%>% count() #De125 hat nur 2 observations
+Landuse_plots_P %>% filter(NUTS_2=="DE125")
+
+
+write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Landuse_plots_P.xlsx", col_names = TRUE)
 
 
 
@@ -712,17 +717,171 @@ summary(P_Verbrauch)
 write_xlsx(x=P_Verbrauch , path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/P_Verbrauch.xlsx", col_names = T)
 
 
-
-
-
 # where is the P_soil class at the moment
 Landuse_SQ_P
 Landuse_plots_P
 summary(Landuse_plots_P$P.2013...2)
 
+##########################################################################################################################################################################################
+# Restriction for silage maize and 
+sm_county<- zentroid_p %>% filter(Kennung=="SM")
+head(sm_county)
+
+sm_county<-sm_county %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
+#sm_county <- sm_county %>% group_by(NUTS_2, Kennung)
+sm_county <-sm_county %>% mutate(management= case_when(
+                                   Bodenguete=='gering' ~c("niedrig"),
+                                   Bodenguete=='mittel' ~c("mittel"),
+                                   Bodenguete=='hoch' ~c("hoch")))
+
+sm_county <- sm_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+
+
+# Restriction for potatoes
+Ka_county<- zentroid_p %>% filter(Kennung=="Ka")
+head(Ka_county)
+
+Ka_county<-Ka_county %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
+#Ka_county <- Ka_county %>% group_by(NUTS_2, Kennung)
+Ka_county <-Ka_county %>% mutate(management= case_when(
+  Bodenguete=='gering' ~c("niedrig"),
+  Bodenguete=='mittel' ~c("mittel"),
+  Bodenguete=='hoch' ~c("hoch")))
+
+Ka_county <- Ka_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+Ka_county
+
+# Beschraenkung KArtoffel Silomais auf die Ganze region Bawü
+Ka_county %>%ungroup() %>%summarize(bawue_ka_ha=sum(sum_ha_sm))  # in total 5396ha Kartoffel in Bawü
+
+sm_county %>%ungroup() %>%summarize(bawue_sm_ha=sum(sum_ha_sm))  # 133,258 ha Silomais in Bawü
+
+
+## waehlen einer globalen beschraenkung 1.25 * Flaeche je crop, je regio in diesem Fall der Kreis
+crop_kreis_res<-zentroid_p %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
+crop_kreis_res <-crop_kreis_res %>% mutate(management= case_when(
+                          Bodenguete=='gering' ~c("niedrig"),
+                          Bodenguete=='mittel' ~c("mittel"),
+                          Bodenguete=='hoch' ~c("hoch")))
+
+crop_kreis_res <- crop_kreis_res %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+crop_kreis_res <- crop_kreis_res %>% filter(!crop=="B")
 
 
 
+
+
+## write out restriction datasets
+
+write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Ka_county.xlsx", col_names = T)
+write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/sm_county.xlsx", col_names = T)
+write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_kreis_res.xlsx", col_names = T)
+
+
+
+############################################################################################################################################################################################
+############################################################################################################################################################################################
+## Model diagnostics
+######################################################################################################################################################################################################
+
+## Einlesen und uerberpruefen der Ergebnisse gegenüber dem status quo
+## should be a easily reproducible script, that compares
+
+  #(1) Crop amounts for each county
+  #(2) CRids available from crop rota to the ones grown in the respective county
+
+############################################################################################################################################################################################
+## status quo
+########################################################################################################################################################################################
+
+# (1) Amounts of crops for each county
+# file containing status quo data
+status_quo <- zentroid_p
+status_quo <- status_quo %>% select(counties="NUTS_2",management="Bodenguete",crop="Kennung", FLAECHE_HA)
+status_quo <- status_quo %>% filter(!crop=="B")
+head(status_quo)
+summary(status_quo)
+
+## Or take the crop shares from status quo
+crop_share_status_quo<-Crop_share_BW_P
+crop_share_status_quo
+
+###########################################################################################################################################################################################
+## GAMS results
+#########################################################################################################################################################################################
+
+# loading results files from GAMS
+setwd("C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/GAMS_P/Results/01.03.23")
+
+Gams_results <- read_excel("results.xlsx", sheet="Tabelle1")
+report_anbau <- read_excel("Report_Anbau.xlsx", sheet="Tabelle1")
+head(report_anbau)
+summary(report_anbau)
+
+report_anbau  <-report_anbau %>% rename(counties="...1", crop="...2")
+
+report_anbau <- pivot_longer(report_anbau, cols = c("mittel", "hoch", "niedrig"), names_to = "management", values_to = "FLAECHE_HA")
+head(report_anbau)
+
+#############################################################################################################################################################################################
+## Comparison of results
+##########################################################################################################################################################################################
+
+# Comparing by county fuer die anbaumenge crop
+status_quo %>% group_by(counties, crop) %>% summarize(crop_flaeche=sum(FLAECHE_HA)) #608x3 dataset
+report_anbau %>%group_by(counties, crop) %>% summarize(crop_flaeche=sum(FLAECHE_HA)) #240x3 dataset
+
+## Comparing crop shares
+# create crop shares aus report_anbau
+crop_share_GAMS<- report_anbau %>% group_by(counties) %>% mutate(sum_kreis=sum(FLAECHE_HA, na.rm=TRUE)) %>% group_by(counties, crop, sum_kreis) %>% 
+                                        summarize(sum=sum(FLAECHE_HA, na.rm=TRUE)) %>% mutate(share=sum/sum_kreis)%>% select(-sum_kreis,-sum)%>%
+                                        spread(key = crop, value = share)
+
+crop_share_GAMS
+crop_share_status_quo
+
+crop_share_GAMS$Ha - crop_share_status_quo$Ha
+
+
+
+# 01.03.23 Potatoe is wildly overrepresented, sugar beet not even in the solution
+
+## how about the crop rotations
+# crop roatation matrix
+setwd("C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/GAMS_P/Results")
+CropRot <- read_excel("Crop_Rot.xlsx", sheet="Tabelle1")
+
+setwd("C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/GAMS_P/Results/28.02.23")
+CropProdl <- read_excel("results.xlsx", sheet="Tabelle1")
+
+CropRot<- CropRot %>% rename(CR_id="...1") 
+CropRot
+
+CropRot<-CropRot %>% replace_na(list(Gr=0)) %>%
+             replace_na(list(Ha=0)) %>%
+             replace_na(list(Ka=0)) %>%
+             replace_na(list(KG=0)) %>%
+             replace_na(list(KM=0)) %>%
+             replace_na(list(SG=0)) %>%
+             replace_na(list(SM=0)) %>%
+             replace_na(list(WG=0)) %>%
+             replace_na(list(Win=0)) %>%
+             replace_na(list(WR=0)) %>%
+             replace_na(list(WW=0)) %>%
+              replace_na(list(ZR=0)) %>%
+              replace_na(list(Rog=0)) %>%
+              replace_na(list(KL=0)) 
+
+CR_id_name<-rotation_matrix %>% select(CR_id=CRid,Kombo ) %>% mutate(CR_id=as.character(CR_id))
+
+
+# leftjoin
+#GAMS_crop_rotations <-left_join(CR_id_name, CropProdl, by="CR_id")
+GAMS_crop_rotations<- left_join(CropProdl, CR_id_name, by="CR_id")
+head(GAMS_crop_rotations)
+
+GAMS_crop_rotations %>% group_by(Kombo) %>% count()
+GAMS_crop_rotations %>% group_by(Counties,Kombo) %>% count()
 
 
 
