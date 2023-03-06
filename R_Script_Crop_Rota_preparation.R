@@ -15,10 +15,11 @@ library(tidyr)
 library(readxl)
 #install.packages("rJava")
 #library(rJava)
-#install.packages("writexl")
+#install.packages("openxlsx")
 library(writexl)
 library(ggplot2)
 library(tidyverse)
+library(openxlsx)
 
 Flaechennutzung_Nutzcode <-read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Modell-AG\\Modell-AG\\Flaechennutzung_Nutzcode.csv", sep=";") 
 
@@ -254,8 +255,8 @@ kommune <- kommune %>% filter(!AGS_0_2 %in% kommune_filter_out)
 
 
 
-write_xlsx(x=kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kreis_P.xlsx", col_names = TRUE)
-write_xlsx(x=kommune, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kommune_p.xlsx", col_names = TRUE)
+write_xlsx(x=kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kreis_P.xlsx", col_names = FALSE)
+write_xlsx(x=kommune, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kommune_p.xlsx", col_names = FALSE)
 
 
 
@@ -386,8 +387,26 @@ CR_Glieder <- CR_Glieder %>% rename(Cr_Glieder=value)
 head(rotation_matrix)
 head(Rotations_felix)
 
-kommune_CRid <- Rotations_felix %>% left_join(rotation_matrix, by="Kombo")
-kommune_CRid <- kommune_CRid %>% select(rowid, LAU_ID)
+
+### Achtung ich hatte bei rotations_felix filter angelegt... und zwar für eingliedrige Fruchtfolgen die wurden raussortiert
+### simply switch left_join around
+
+
+#kommune_CRid <- Rotations_felix %>% left_join(rotation_matrix, by="Kombo")
+kommune_CRid <- rotation_matrix %>% left_join(Rotations_felix, by="Kombo")
+
+# is there still the issue with difference in kommune sets? no issue anymore with that sepcific observation
+# but we have 1057 LAU_IDs in kommune_CRid but 1069 kommunen
+# which kommunen are making the difference?
+kommune_CRid %>% distinct(LAU_ID)%>% count()
+setdiff(kommune_CRid$LAU_ID, kommune$AGS_0_2)
+setdiff(kommune$AGS_0_2, kommune_CRid$LAU_ID)
+
+#kommune_CRid %>% filter(LAU_ID=="8417071")
+#kommune %>% filter(AGS_0_2=="8417071")
+#kommune_CRid <- kommune_CRid %>% select(rowid, LAU_ID) %>% filter(!LAU_ID=="8417071")
+
+
 
 
 
@@ -400,11 +419,28 @@ kommune_filter_out<-setdiff(kommune$AGS_0_2, kommune_CRid$LAU_ID)
 kommune_CRid %>% filter(LAU_ID=="8136040")
 kommune %>% filter(AGS_0_2=="8136040")
 
-## These 6 need to be filtered out in the files coming from my own GIS work
+kommune_CRid<-kommune_CRid %>% select(rowid, LAU_ID)
+kommune_CRid %>% distinct(rowid) %>% count()
+
+
+## These 8 need to be filtered out in the files coming from my own GIS work
 kommune_2 <- kommune %>% filter(!AGS_0_2 %in% kommune_filter_out)
 
 
+### write out file combining kommune with CR_id
+head(kommune_CRid)
+id<-kommune_CRid %>% distinct(rowid)
 
+setdiff(kommune_CRid$LAU_ID, kommune$AGS_0_2)
+setdiff(kommune$AGS_0_2, kommune_CRid$LAU_ID)
+
+
+
+write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/kommune_CRid.xlsx", col_names = TRUE)
+
+
+dim(kommune_CRid)
+dim(kommune)
 
 
 
