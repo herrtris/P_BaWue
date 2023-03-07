@@ -317,7 +317,47 @@ Cr_bawue_distinct <- Rotations_tristan %>% distinct(Kombo, Gewicht, Glied1, Glie
 glimpse(Cr_bawue_distinct)
 
 ## There are 169 distinct crop rotations in BAWUE at the NUTS_2 level
+count_values <- function(x) {
+  table(x)[as.character(x)]
+}
 
+test <-Cr_bawue_distinct %>%select(Glied1:Glied5)
+
+value_counts <-  apply(test[, c("Glied1", "Glied2", "Glied3", "Glied4", "Glied5")], 1, count_values)
+summary(value_counts)
+value_counts<-value_counts %>% as_tibble()
+value_counts
+
+more_than_four<-value_counts %>% select_if(~any(. >=4))
+more_than_four
+
+Cr_to_filter<-colnames(more_than_four)
+Cr_to_filter <-as.integer(sub("^V", "", Cr_to_filter)) %>% as_tibble()
+Cr_to_filter <- Cr_to_filter %>% rename(CRid=value)
+Cr_to_filter
+
+
+# 37 crop rotations haben 3 oder mehr das selbe GLied
+# 23 crop rotations haben 4 oder mehr das seleb glied
+
+
+################################################################################################################################
+# in welchen kreisen kommt die Cr_to_filter am häufigsten vor? code only works if kommune_CRid is unfiltered
+Rotations_tristan
+kommune_CRid
+Cr_to_filter
+
+# wieviele der gefiltereten sind in den Kreisen verfügbar
+kommune_CRid %>% filter(CRid %in% Cr_to_filter$CRid) %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
+
+# wieviele sind insgesamt vefügabr je kreis
+kommune_CRid %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
+
+
+
+
+
+############################################################################################################################
 
 ## looking at the variables
 levels(Cr_bawue_distinct$Glied1)
@@ -333,11 +373,25 @@ summary(Cr_bawue_distinct$Gewicht)
 # ## Excluding crop rotations with only one crop
 # Cr_bawue_distinct <- Cr_bawue_distinct %>% filter(!Gewicht=="1")
 
-### After exclusion: 169 crop rotation options in BaWUE
+### Excluding crop rotations with more than 4 times the same crop in the rotation
+
+Cr_bawue_distinct <-Cr_bawue_distinct %>%  rowid_to_column() %>% mutate(CRid = rowid) %>% select(-rowid) %>% select(CRid, Kombo:Gewicht)
+Cr_bawue_distinct<- Cr_bawue_distinct %>% filter(!CRid %in% Cr_to_filter$CRid)
+glimpse(Cr_bawue_distinct)
+
+Cr_bawue_distinct <- Cr_bawue_distinct %>% select(-CRid)
+str(Cr_bawue_distinct)
+
+# 37 crop rotations got filtered out if 4 are filterd out, leaving 132
+# 23 crop rotations got filtered out if 3 are filterd out, leaving 146
+
+
+
 
 
 ## Creating a table containing the crop rotations
 rotation_matrix <- Cr_bawue_distinct %>%  rowid_to_column() %>% mutate(CRid = rowid) %>% select(-rowid) %>% select(CRid, Kombo:Gewicht)
+str(rotation_matrix)
 crops <- levels(rotation_matrix$Glied1)
 
 ## Preparation of crop rotation table, taking position of crop in crop rotation into account
@@ -349,13 +403,27 @@ glied5 <- rotation_matrix %>% select(CRid, Glied5, Gewicht) %>% pivot_wider(name
 
 pivotlonger_test <- rotation_matrix %>% pivot_longer(c(Glied1, Glied2, Glied3, Glied4, Glied5))
 
+
+## Defines which one needs a mutate 0 in the operation, here ZR in glied5
+## looking at the variables
+levels(Cr_bawue_distinct$Glied1)
+levels(Cr_bawue_distinct$Glied2)
+levels(Cr_bawue_distinct$Glied3)
+levels(Cr_bawue_distinct$Glied4)
+
+# in der fünfgliederigen Fruchtfolge kommt kein ZR vor
+levels(Cr_bawue_distinct$Glied5)
+summary(Cr_bawue_distinct$Gewicht)
+
+
+
   Glied1<-pivotlonger_test %>%  filter(name=="Glied1") %>% 
           pivot_wider(names_from = value, values_from = Gewicht,  values_fill = 0) %>%
           mutate(Gr_Glied1=Gr, KG_Glied1=KG, KM_Glied1=KM, WG_Glied1=WG, 
                  SM_Glied1=SM, WW_Glied1=WW, WR_Glied1=WR, Win_Glied1=Win,
                  SG_Glied1=SG, Ha_Glied1=Ha, ZR_Glied1=ZR, Ka_Glied1=Ka,
                  Rog_Glied1=Rog, KL_Glied1=KL) %>%
-          select(-c("KM":"KG")) %>% select(-name)
+          select(-c("WW":"KG")) %>% select(-name)
 
 
   Glied2<- pivotlonger_test %>%  filter(name=="Glied2") %>% 
@@ -364,23 +432,23 @@ pivotlonger_test <- rotation_matrix %>% pivot_longer(c(Glied1, Glied2, Glied3, G
                  SM_Glied2=SM, WW_Glied2=WW, WR_Glied2=WR, Win_Glied2=Win,
                  SG_Glied2=SG, Ha_Glied2=Ha, ZR_Glied2=ZR, Ka_Glied2=Ka,
                  Rog_Glied2=Rog, KL_Glied2=KL) %>%
-           select(-c("-":"Gr")) %>% select(-name)
+           select(-c("WG":"Gr")) %>% select(-name)
 
   Glied3<- pivotlonger_test %>%  filter(name=="Glied3") %>% 
-           pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+           pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>% 
            mutate(Gr_Glied3=Gr, KG_Glied3=KG, KM_Glied3=KM, WG_Glied3=WG, 
                  SM_Glied3=SM, WW_Glied3=WW, WR_Glied3=WR, Win_Glied3=Win,
                  SG_Glied3=SG, Ha_Glied3=Ha, ZR_Glied3=ZR, Ka_Glied3=Ka,
                  Rog_Glied3=Rog, KL_Glied3=KL) %>%
-           select(-c("-":"KG")) %>% select(-name)
+           select(-c("Ka":"KG")) %>% select(-name)
 
   Glied4<- pivotlonger_test %>%  filter(name=="Glied4") %>% 
-           pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>%
+           pivot_wider(names_from = value, values_from = Gewicht, values_fill = 0) %>% 
            mutate(Gr_Glied4=Gr, KG_Glied4=KG, KM_Glied4=KM, WG_Glied4=WG, 
                  SM_Glied4=SM, WW_Glied4=WW, WR_Glied4=WR, Win_Glied4=Win,
                  SG_Glied4=SG, Ha_Glied4=Ha, ZR_Glied4=ZR, Ka_Glied4=Ka,
                  Rog_Glied4=Rog, KL_Glied4=KL) %>%
-           select(-c("Gr":"-")) %>% select(-name)
+           select(-c("-":"Gr")) %>% select(-name)
 
 
   Glied5<- pivotlonger_test %>%  filter(name=="Glied5") %>% 
@@ -397,6 +465,9 @@ rotation_matrix_full <- Glied1 %>% left_join(Glied2, by="CRid") %>% left_join(Gl
 
 rotation_matrix_full <- rotation_matrix_full %>% select(-c(Kombo.y,Kombo.y.y,Kombo.y,Kombo.x, Kombo, Kombo.x.x))
                          
+
+glimpse(rotation_matrix_full)
+summary(rotation_matrix_full)
 rm(glied1, Glied1, Glied2, Glied3, Glied4, Glied5)
 rm(glied2, glied3, glied4 ,glied5)
 #rm(Crop_share_BW_P)
@@ -438,6 +509,7 @@ for (value in values_list) {
 
 
 crop_CR_matrix<-crop_CR_matrix %>% rename(crop=Glied1)
+str(crop_CR_matrix)
 
 #check
 CR_Glieder
@@ -455,7 +527,7 @@ crop_gams<-c("Gr", "Ha", "Ka", "KG", "KM", "SG", "SM", "WG", "Win", "WR", "WW", 
 setdiff(crop, crop_gams)
 setdiff(crop_gams, crop)
 
-# es liegt nicht an der Belegung der sets, sets sind identisch
+# check: Belegung der sets, sets sind identisch
 
 ### Verknuepfe Info zwischen CR_id=row_id und Kommunen_information
 head(rotation_matrix)
@@ -776,6 +848,13 @@ crop_kreis_res <- crop_kreis_res %>% filter(!crop=="B")
 write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Ka_county.xlsx", col_names = T)
 write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/sm_county.xlsx", col_names = T)
 write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_kreis_res.xlsx", col_names = T)
+
+
+
+
+
+
+
 
 
 
