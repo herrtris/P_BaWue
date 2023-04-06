@@ -16,19 +16,34 @@ library(writexl)
 library(ggplot2)
 library(tidyverse)
 
+# shape file without P information; 1,406,122 obs of 196 variables
 zentroid_p <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\Zentroide\\Ver_centroidga21_bawuegemeinde_bodke.csv", 
               sep=",", stringsAsFactors = T)
 
 Flaechennutzung_Nutzcode <-read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Modell-AG\\Modell-AG\\Flaechennutzung_Nutzcode.csv", sep=";") 
 str(zentroid_p)
 
+# loading zentroid with P information
+# 1,392,108 observations of 200 variables
+zentroid_p <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\Zentroide\\Ausgabetabelle_P.csv", 
+                       sep=";", stringsAsFactors = T)
+
+
+glimpse(zentroid_p)
+glimpse(Flaechennutzung_Nutzcode)
+max(zentroid_p$OID_)
+
+
 ## GA-Datensatz vorbereiten
 Flaechennutzung_Nutzcode <- Flaechennutzung_Nutzcode %>% select(1:5) %>% filter(!is.na(NUTZCODE))
+Flaechennutzung_Nutzcode$NUTZCODE<- as.factor(Flaechennutzung_Nutzcode$NUTZCODE)
+
+
 
 #create an ID for test
 zentroid_p$OID_<- 1:nrow(zentroid_p)
 
-zentroid_p <- zentroid_p %>% mutate(Schlag_ID=OID_) %>% select(Schlag_ID, FLAECHE_HA, NUTZCODE, NUTS_2, AGS_0_2, NATBOD, NUTZUNG, P.2013...2, pH.2013.., K.2013...2)
+zentroid_p <- zentroid_p %>% mutate(Schlag_ID=OID_) %>% select(Schlag_ID, FLAECHE_HA, NUTZCODE, NUTS_2, AGS_0_2, NATBOD, NUTZUNG, P_2013___2, pH_2013__, K_2013___2, DN)
 zentroid_p<- zentroid_p %>% left_join(Flaechennutzung_Nutzcode, by="NUTZCODE") %>% filter(Flaechenart=="Ackerland")
 
 zentroid_p %>% head(10)
@@ -42,10 +57,21 @@ zentroid_p <- zentroid_p %>%
                       ifelse(NATBOD %in% c( "3,5"), "hoch",    
                       ifelse(NATBOD %in% c( "4,0"), "hoch","mittel")))))))) 
 
+
+# ggplot(zentroid_p%>% select(NATBOD) %>%filter(!is.na(NATBOD)), aes(x = NATBOD)) +
+#   geom_histogram(binwidth = 0.5, fill = "lightblue", color = "black") +
+#   labs(title = "Histogram of Example Data", x = "Value", y = "Count")
+
+
 zentroid_p$Bodenguete <- factor(zentroid_p$Bodenguete, levels=c("gering", "mittel", "hoch")) 
 zentroid_p %>% group_by(Bodenguete) %>% count()
 
 # Unterteilung der Schlaggroesen 
+glimpse(zentroid_p)
+
+# first replace , with point
+zentroid_p$FLAECHE_HA<- as.numeric(zentroid_p$FLAECHE_HA)
+
 zentroid_p$ha_Kat = cut(zentroid_p$FLAECHE_HA, c(0,2,5,10,1000), levels=c("1", "2", "5","10", "1000"))
 zentroid_p %>% summarise(sum_ha=sum(FLAECHE_HA))
 zentroid_p %>% select(Schlag_ID) %>% count()
@@ -75,6 +101,18 @@ Landuse_plots_P %>% filter(NUTS_2=="DE125")
 
 
 write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Landuse_plots_P.xlsx", col_names = TRUE)
+
+
+####### Uebersetzung Bodenguete in Intensity plot Bodenguete
+plot_bodenguete <- Landuse_plots_P
+
+plot_bodenguete <-  plot_bodenguete %>% mutate(gering= ifelse(Bodenguete %in% "gering",1,0))
+plot_bodenguete<-   plot_bodenguete %>% mutate(mittel= ifelse(Bodenguete %in% "mittel",1,0))
+plot_bodenguete<-   plot_bodenguete %>% mutate(hoch= ifelse(Bodenguete %in% "hoch",1,0))
+plot_bodenguete <-plot_bodenguete %>% select(PLOT_ID, counties=NUTS_2, gering, mittel, hoch)
+plot_bodenguete
+
+write_xlsx(x=plot_bodenguete, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/plot_bodenguete.xlsx", col_names = TRUE)
 
 
 
@@ -145,6 +183,9 @@ two <- yields_soilqual_Fut %>% select(`crop abrre`, Intensitaet)
 
 Energie_pro_ha <- rbind(one, two)
 
+# added on the 13.03.23
+kreis <- Landuse_plots %>% select(NUTS_2) %>% distinct(NUTS_2)
+
 new_df <- expand.grid(`crop abrre`=unique(Energie_pro_ha$`crop abrre`),
                       Intensitaet= unique(Energie_pro_ha$Intensitaet),
                       county=kreis$NUTS_2) %>% as_tibble()
@@ -152,6 +193,8 @@ new_df <- expand.grid(`crop abrre`=unique(Energie_pro_ha$`crop abrre`),
 
 Energie_proha<- left_join(new_df, yields_soilqual_Fut, by=c("crop abrre", "Intensitaet"))
 Energie_proha <- Energie_proha %>% replace_na(list(`Ertrag (10 MJ NEL/ha)`=0))
+Energie_proha %>% print(n=Inf)
+
 
 ### write out Energiebedarf je crop, intensity and county
 write_xlsx(x=Energie_proha, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Energie_proha.xlsx", col_names = TRUE)
@@ -250,10 +293,27 @@ Energiebedarf
 
 
 # wie ist die VErteilung von Futterbau auf Bodenguete?
-futterbau_bedarf_kreis <- futterbau_bedarf_joined %>% select(NUTS_2, Energiebedarf_Schlag) %>% group_by(NUTS_2) %>% summarize(Energiebedarf_kreis_MJNEL=sum(Energiebedarf_Schlag))
+dim(futterbau_bedarf_joined)
+futterbau_bedarf_kreis <- 
+  
+futterbau_bedarf_joined %>% select(NUTS_2,Bodenguete, Energiebedarf_Schlag) %>% 
+  group_by(NUTS_2, Bodenguete) %>% summarize(Energiebedarf_kreis_MJNEL=sum(Energiebedarf_Schlag))%>%
+  mutate(management=case_when(
+         Bodenguete=='hoch' ~"high",
+         Bodenguete=='mittel'~"medium",
+         Bodenguete=='niedrig'~"low")) %>% select(couties="NUTS_2", management, Energiebedarf_kreis_MJNEL)
+
+
+#utterbau_bedarf_joined <-futterbau_bedarf_joined %>% mutate(DB_ha=case_when(
+  #                                     Kennung=='KG' & Bodenguete=='niedrig' ~ c(-123),
+  #                                     Kennung=='KG' & Bodenguete=='mittel'  ~ c(-233),
+  #                                     Kennung=='KG' & Bodenguete=='hoch'    ~ c(-343),
+  #                                     Kennung=='SM' & Bodenguete=='niedrig' ~ c(-223),
+
+
 head(futterbau_bedarf_kreis)  
   
-write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/futterbau_bedarf_kreis.xlsx", col_names = TRUE)
+write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/futterbau_bedarf_kreis.xlsx", col_names = TRUE)
 write_xlsx(x=futterbau_bedarf_DB, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/futterbau_bedarf_DB.xlsx", col_names = TRUE)
 
 
@@ -647,7 +707,7 @@ Landuse_SQ_P
 #  input
 
 getwd()
-setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten")
+setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten")
 
 # reading data in
 ######### !!!! Excel file ist gelinkt zu Marktfruechte und Futterbau Klakulationstabellen, aenderungen in diesen Tabellen veraendern die input daten
