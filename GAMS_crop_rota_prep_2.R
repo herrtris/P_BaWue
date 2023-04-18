@@ -5,6 +5,7 @@
 
 rm(list=ls())
 
+
 # input <- choose.files()
 # input
 
@@ -16,80 +17,335 @@ library(writexl)
 library(ggplot2)
 library(tidyverse)
 
-# shape file without P information; 1,406,122 obs of 196 variables
-zentroid_p <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\Zentroide\\Ver_centroidga21_bawuegemeinde_bodke.csv", 
-              sep=",", stringsAsFactors = T)
+# 1. Laden der Teildatasets
+# Wegen der 2GB output beschränkung von ArcGis siond die DAten auf 4 csv files aufgeteilt, folgende Bearbeitungsschritte sind bisher passiert mit jedem der data packages
+# Zentroid bildung (Mittelpunkt der Feldflächen) der GA21 Daten. 
+# Verschneiden der zentroide mit der bodenkarte 50 um NATBOD zu bekommen
+# Verschneiden mit der Karte der administrativen Granzen BaWüs, um die Feldzentroide Kreisen und Kommunen zuzuordenen
+# Verschneiden mit der JRC Karte chemical soil properties phosphate um jedem Feld einen P_cal Wert zuzuordnen
 
-Flaechennutzung_Nutzcode <-read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Modell-AG\\Modell-AG\\Flaechennutzung_Nutzcode.csv", sep=";") 
-str(zentroid_p)
+# Alle Datasetes werden hier eingelesen:
 
-# loading zentroid with P information
-# 1,392,108 observations of 200 variables
-zentroid_p <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\Zentroide\\Ausgabetabelle_P.csv", 
+
+
+# zenroid_p_1
+zentroid_p1 <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\12.04\\P_zentroid_1.csv", 
                        sep=";", stringsAsFactors = T)
 
+zentroid_p2 <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\12.04\\P_zentroid_2.csv", 
+                        sep=";", stringsAsFactors = T)
+
+zentroid_p3 <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\12.04\\P_zentroid_3.csv", 
+                        sep=";", stringsAsFactors = T)
+
+zentroid_p4 <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\12.04\\P_zentroid_4.csv", 
+                        sep=";", stringsAsFactors = T)
+
+
+## short check of read datasets zentroidp1 to 4
+glimpse(zentroid_p1)
+glimpse(zentroid_p2)
+glimpse(zentroid_p3)
+glimpse(zentroid_p4)
+
+
+#binding zentroid file 1 to 4 to one zentroid file
+zentroid_p <- rbind(zentroid_p1, zentroid_p2, zentroid_p3, zentroid_p4)
 
 glimpse(zentroid_p)
-glimpse(Flaechennutzung_Nutzcode)
-max(zentroid_p$OID_)
 
 
-## GA-Datensatz vorbereiten
+## Making field area numeric
+zentroid_p$FLAECHE_HA<-   gsub(",",".",zentroid_p$FLAECHE_HA)
+zentroid_p$FLAECHE_HA <- as.numeric(zentroid_p$FLAECHE_HA)
+glimpse(zentroid_p)
+
+
+
+
+# old shapefile data drom qgis verschniedung
+# # shape file without P information; 1,406,122 obs of 196 variables
+# zentroid_p <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\Zentroide\\Ver_centroidga21_bawuegemeinde_bodke.csv", 
+#               sep=",", stringsAsFactors = T)
+# 
+# zentroid_p %>% distinct(NUTS_2)
+# 
+# 
+# check<-zentroid_p %>% select(NUTS_2) %>% group_by(NUTS_2) %>% count()
+
+# Loading area inforamtion on field usage
+Flaechennutzung_Nutzcode <-read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS\\Modell-AG\\Modell-AG\\Flaechennutzung_Nutzcode.csv", sep=";") 
+str(Flaechennutzung_Nutzcode)
+
+
+# lodaing P_level at the county level from MLR to replace zeroes of JRC map
+county_P_levels <- read.csv("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Spatial_data\\12.04\\county_P_levels.csv", 
+                        sep=";", stringsAsFactors = T)
+
+head(county_P_levels)
+
+county_P_levels <-county_P_levels %>% select(NUTS_2,AGS_0_2,P_level= P_2013___2,pH=pH_2013__, K=K_2013___2 )
+county_P_levels
+
+
+###################################### GA-Datensatz vorbereiten ###################################################################################################
+##################################################################################################################################################################
+
 Flaechennutzung_Nutzcode <- Flaechennutzung_Nutzcode %>% select(1:5) %>% filter(!is.na(NUTZCODE))
 Flaechennutzung_Nutzcode$NUTZCODE<- as.factor(Flaechennutzung_Nutzcode$NUTZCODE)
 
 
 
-#create an ID for test
+#Creating a row ID, field ID
 zentroid_p$OID_<- 1:nrow(zentroid_p)
-
-zentroid_p <- zentroid_p %>% mutate(Schlag_ID=OID_) %>% select(Schlag_ID, FLAECHE_HA, NUTZCODE, NUTS_2, AGS_0_2, NATBOD, NUTZUNG, P_2013___2, pH_2013__, K_2013___2, DN)
-zentroid_p<- zentroid_p %>% left_join(Flaechennutzung_Nutzcode, by="NUTZCODE") %>% filter(Flaechenart=="Ackerland")
-
-zentroid_p %>% head(10)
-
-zentroid_p <- zentroid_p %>%
-  mutate(Bodenguete = ifelse(NATBOD %in% c("1,0"), "gering",
-                      ifelse(NATBOD %in% c("1,5"), "gering",
-                      ifelse(NATBOD %in% c( "2,0"), "mittel",
-                      ifelse(NATBOD %in% c("2,5"), "mittel",
-                      ifelse(NATBOD %in% c( "3,0"), "hoch",    
-                      ifelse(NATBOD %in% c( "3,5"), "hoch",    
-                      ifelse(NATBOD %in% c( "4,0"), "hoch","mittel")))))))) 
+max(zentroid_p$OID_)
 
 
-# ggplot(zentroid_p%>% select(NATBOD) %>%filter(!is.na(NATBOD)), aes(x = NATBOD)) +
-#   geom_histogram(binwidth = 0.5, fill = "lightblue", color = "black") +
-#   labs(title = "Histogram of Example Data", x = "Value", y = "Count")
+zentroid_p <- zentroid_p %>% mutate(Schlag_ID=OID_) %>% select(Schlag_ID, FLAECHE_HA, NUTZCODE, NUTS_2, AGS_0_2, NATBOD, NUTZUNG, P_level=DN)
 
 
-zentroid_p$Bodenguete <- factor(zentroid_p$Bodenguete, levels=c("gering", "mittel", "hoch")) 
-zentroid_p %>% group_by(Bodenguete) %>% count()
-
-# Unterteilung der Schlaggroesen 
+# joining landuse data with usage code of the area
 glimpse(zentroid_p)
+glimpse(Flaechennutzung_Nutzcode)
 
-# first replace , with point
-zentroid_p$FLAECHE_HA<- as.numeric(zentroid_p$FLAECHE_HA)
 
-zentroid_p$ha_Kat = cut(zentroid_p$FLAECHE_HA, c(0,2,5,10,1000), levels=c("1", "2", "5","10", "1000"))
-zentroid_p %>% summarise(sum_ha=sum(FLAECHE_HA))
-zentroid_p %>% select(Schlag_ID) %>% count()
+Flaechennutzung_Nutzcode$NUTZCODE <- as.factor(Flaechennutzung_Nutzcode$NUTZCODE)
+zentroid_p$NUTZCODE <- as.factor(zentroid_p$NUTZCODE)
 
+zentroid_p_joined<- zentroid_p %>% left_join(Flaechennutzung_Nutzcode, by="NUTZCODE") %>% filter(Flaechenart=="Ackerland")
+
+
+### Joining based on "arable land" criteria yields 516,991 observations
+
+## Creating the factor of soil quality
+zentroid_p_joined %>% head(10)
+
+zentroid_p_joined <- zentroid_p_joined %>%
+  mutate(Bodenguete = ifelse(NATBOD %in% c("1,0"), "low",
+                      ifelse(NATBOD %in% c("1,5"), "low",
+                      ifelse(NATBOD %in% c( "2,0"), "medium",
+                      ifelse(NATBOD %in% c("2,5"), "medium",
+                      ifelse(NATBOD %in% c( "3,0"), "high",    
+                      ifelse(NATBOD %in% c( "3,5"), "high",    
+                      ifelse(NATBOD %in% c( "4,0"), "high","medium")))))))) 
+
+
+
+
+# There is one NA for the NUTS_2 level
+# Checking for NAs
+summary(zentroid_p_joined)
+levels(zentroid_p_joined$NUTS_2)
+levels(zentroid_p_joined$NUTZUNG)
+
+
+zentroid_p_joined$NUTS_2 <- gsub(" ","NA",zentroid_p_joined$NUTS_2)
+
+zentroid_p_joined_filtered <- zentroid_p_joined%>%filter(!NUTS_2=="NA")
+
+zentroid_p_joined_filtered$Kulturgruppe <- as.factor(zentroid_p_joined_filtered$Kulturgruppe)
+
+
+levels(zentroid_p_joined_filtered$Kulturgruppe)
+
+# zentroid_p_joined_filtered does still contain Brache
+
+
+##########################################################################################################################################################################################
+# Intermediate result: soil_qual in ha per county
+## Checking the occurence in my dataset for soil qualities
+## General
+ggplot(zentroid_p_joined_filtered, aes(x = Bodenguete, fill=NUTS_2)) +
+  geom_bar() +
+  labs(title = "Frequency of categories in soil_quality", 
+       x = "soil_qual", y = "Frequency")
+
+
+# Soil quality for each county, frequency table
+ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2, fill=Bodenguete)) +
+  geom_bar() +
+  labs(title = "Frequency of categories in soil_quality", 
+       x = "NUTS_2", y = "Frequency")
+
+
+# Soil quality for each county, area in ha
+ggplot(zentroid_p_joined_filtered %>% group_by(Bodenguete, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Bodenguete)) +
+  geom_col() +
+  labs(title = "Frequency of categories in soil_quality", 
+       x = "NUTS_2", y = "area in ha")
+
+
+zentroid_p_joined_filtered %>% summarize(Total_area=sum(FLAECHE_HA))
+zentroid_p_joined_filtered %>% filter(!Kulturgruppe=="Brache") %>% summarize(n=n(), Total_area=sum(FLAECHE_HA))
+
+
+### crop distribution across different NUTs_2 in FLAECHE_ha
+ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Kulturgruppe)) +
+  geom_col() +
+  labs(title = "crop disrtbution across NUTS_2", 
+       x = "NUTS_2", y = "area in ha")
+
+
+ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = Kulturgruppe,y=sum_FLAECHE_ha)) +
+  geom_col() + facet_wrap(~NUTS_2)+ theme(axis.text.x=element_text(angle=90,hjust=1))
+  labs(title = "crop disrtbution across NUTS_2", 
+       x = "NUTS_2", y = "area in ha")
+
+#17.04.23
+## After excluding NAs for NUTS_2 there are 516,915 fields with an area of 739,047 ha including "Brache"
+## After excluding Brache and NAs there are 706,128ha and 439,740 fields 
+
+# Previous result
 # In total, 516905 Schlaege; GEsamtflaeche 739039.9 ha
 
+zentroid_p_joined_filtered%>% group_by(Bodenguete) %>% count()
 
 
-######################################################################################################################################################
+
+# creating a size scale for field area
+zentroid_p_joined_filtered$ha_Kat = cut(zentroid_p_joined_filtered$FLAECHE_HA, c(0,2,5,10,1000), levels=c("1", "2", "5","10", "1000"))
+zentroid_p_joined_filtered %>% summarise(sum_ha=sum(FLAECHE_HA))
+zentroid_p_joined_filtered %>% select(Schlag_ID) %>% count()
+
+
+#cheking the P-level per field
+glimpse(zentroid_p_joined_filtered)
+zentroid_p_joined_filtered$P_level <- as.numeric(zentroid_p_joined_filtered$P_level)
+zentroid_p_joined_filtered<- zentroid_p_joined_filtered %>% mutate(P_level=P_level/10)
+
+# P_level for each county, boxplot
+ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+  geom_boxplot() + facet_wrap(~NUTS_2)
+  labs(title = "Frequency of categories in soil_quality", 
+       x = "NUTS_2", y = "Frequency")
+
+# histogram of P-levels all counties, we have more P_levels below 4 skewed to the left side
+
+ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+  geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
+    labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+
+
+# bocplot for all the region of bawue
+ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+  geom_boxplot() +
+labs(title = "", 
+     x = "", y = "P_level")
+
+
+
+# I have 5430 P_levels of 0 in the dataset, which cannot be... 
+#####################################################################################################################################################################################################
+## End intermediate results for status quo data
+
+
+# Adjusting the P_level 
+# Each P_level of zero will get the value at the county level from the map by the MLR in county_P_level dataset
+head(county_P_levels)
+head(zentroid_p_joined_filtered)
+
+P_level_0 <-zentroid_p_joined_filtered %>% filter(P_level==0)
+head(P_level_0)
+
+#left_join based on AGS_0_2
+P_level_0 %>% left_join(county_P_levels, by="AGS_0_2") 
+
+
+zentroid_p_joined_filtered <-  zentroid_p_joined_filtered %>% left_join(county_P_levels, by="AGS_0_2")
+head(zentroid_p_joined_filtered)
+
+zentroid_p_joined_filtered <- zentroid_p_joined_filtered %>% rename(P_level_JRC="P_level.x", P_level_county="P_level.y")
+
+## replacing P_level_JRC by the county P_level if JRC equals zero
+str(zentroid_p_joined_filtered)
+zentroid_p_joined_filtered$P_level_county<- as.numeric(zentroid_p_joined_filtered$P_level_county)
+
+
+zentroid_p_joined_filtered<- zentroid_p_joined_filtered %>% mutate(P_level=if_else(P_level_JRC==0, P_level_county, P_level_JRC))
+
+# checking the operation, now each value for that is zero in JRC for P should get the value at the county level assigned to it
+# source LEL https://lel.landwirtschaft-bw.de/pb/,Lde/Startseite/Service_+Downloads/Glossar
+P_level_0 <-zentroid_p_joined_filtered %>% filter(P_level_JRC==0)
+head(P_level_0)
+
+# now there are 103 ibs without a P-level value, they are treated as NA and are excluded from the dataset
+P_level_0 <- zentroid_p_joined_filtered %>% filter(P_level==0)
+
+zentroid_p_joined_filtered <-  zentroid_p_joined_filtered %>% filter(!P_level==0)
+
+
+# building P categories based on Buczko et al 
+
+zentroid_p_joined_filtered %>% filter(P_level<=3.3)
+
+
+zentroid_p_joined_filtered <- zentroid_p_joined_filtered %>%
+  mutate(P_level_category = ifelse(P_level<=3.3, "low",
+                            ifelse(P_level>3.3 & P_level <=5.8,"medium",
+                            ifelse(P_level>5.8, "high", "check"      ))))       
+    
+zentroid_p_joined_filtered %>% filter(P_level >5.8)    
+    
+    
+  
+
+
+
+
+##########################################################################################################################################################################################
+# Intermediate result: P_levels in the region in the status quo
+
+ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+  geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
+  labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+
+
+# histograms per counties at NUTS_2
+# How do P_levels of fields differ regionally?
+levels(zentroid_p_joined_filtered$NUTS_2.y)
+
+ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+  geom_histogram(color = "black", fill = "white", binwidth = 0.5) + facet_wrap(~NUTS_2.y)+
+  labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+
+
+# based on buczko categories P<=3.34 low; >3.34 and <=5.82 medium, and >5.82 high
+ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2.y, fill=P_level_category)) +
+  geom_bar() +
+  labs(title = "Frequency of categories in soil_quality", 
+       x = "NUTS_2", y = "Frequency")
+
+
+# bocplot for all the region of bawue
+ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+  geom_boxplot() + facet_wrap(~NUTS_2.y)+
+  labs(title = "", 
+       x = "", y = "P_level")
+
+
+  ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+    geom_boxplot() + 
+  labs(title = "", 
+       x = "", y = "P_level")
+
+
+
+#####################################################################################################################################################################################################
+## End intermediate results for status quo data
+
+
+
+
+
+
+
+# Starting to produce output for Crop Rota and GAMS MODEL
+######################################################################################################################################################################################################
 # Landuseplots
+# usage? 
 
-Landuse_plots_P <- zentroid_p  %>% group_by(NUTS_2, Bodenguete) %>% 
+Landuse_plots_P <- zentroid_p_joined_filtered  %>% group_by(NUTS_2, Bodenguete, P_level) %>% 
                        summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
-
-# if I want to add P fer plot the group_by from above needs to include P
-Landuse_plots_P_added <- zentroid_p  %>% group_by(NUTS_2, Bodenguete, P.2013...2) %>% 
-  summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
-
 
 
 head(Landuse_plots_P)
