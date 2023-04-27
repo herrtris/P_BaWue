@@ -155,24 +155,24 @@ levels(zentroid_p_joined_filtered$Kulturgruppe)
 # Intermediate result: soil_qual in ha per county
 ## Checking the occurence in my dataset for soil qualities
 ## General
-ggplot(zentroid_p_joined_filtered, aes(x = Bodenguete, fill=NUTS_2)) +
-  geom_bar() +
-  labs(title = "Frequency of categories in soil_quality", 
-       x = "soil_qual", y = "Frequency")
-
-
-# Soil quality for each county, frequency table
-ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2, fill=Bodenguete)) +
-  geom_bar() +
-  labs(title = "Frequency of categories in soil_quality", 
-       x = "NUTS_2", y = "Frequency")
-
-
-# Soil quality for each county, area in ha
-ggplot(zentroid_p_joined_filtered %>% group_by(Bodenguete, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Bodenguete)) +
-  geom_col() +
-  labs(title = "Frequency of categories in soil_quality", 
-       x = "NUTS_2", y = "area in ha")
+# ggplot(zentroid_p_joined_filtered, aes(x = Bodenguete, fill=NUTS_2)) +
+#   geom_bar() +
+#   labs(title = "Frequency of categories in soil_quality", 
+#        x = "soil_qual", y = "Frequency")
+# 
+# 
+# # Soil quality for each county, frequency table
+# ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2, fill=Bodenguete)) +
+#   geom_bar() +
+#   labs(title = "Frequency of categories in soil_quality", 
+#        x = "NUTS_2", y = "Frequency")
+# 
+# 
+# # Soil quality for each county, area in ha
+# ggplot(zentroid_p_joined_filtered %>% group_by(Bodenguete, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Bodenguete)) +
+#   geom_col() +
+#   labs(title = "Frequency of categories in soil_quality", 
+#        x = "NUTS_2", y = "area in ha")
 
 
 zentroid_p_joined_filtered %>% summarize(Total_area=sum(FLAECHE_HA))
@@ -180,16 +180,16 @@ zentroid_p_joined_filtered %>% filter(!Kulturgruppe=="Brache") %>% summarize(n=n
 
 
 ### crop distribution across different NUTs_2 in FLAECHE_ha
-ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Kulturgruppe)) +
-  geom_col() +
-  labs(title = "crop disrtbution across NUTS_2", 
-       x = "NUTS_2", y = "area in ha")
-
-
-ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = Kulturgruppe,y=sum_FLAECHE_ha)) +
-  geom_col() + facet_wrap(~NUTS_2)+ theme(axis.text.x=element_text(angle=90,hjust=1))
-  labs(title = "crop disrtbution across NUTS_2", 
-       x = "NUTS_2", y = "area in ha")
+# ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = NUTS_2,y=sum_FLAECHE_ha, fill=Kulturgruppe)) +
+#   geom_col() +
+#   labs(title = "crop disrtbution across NUTS_2", 
+#        x = "NUTS_2", y = "area in ha")
+# 
+# 
+# ggplot(zentroid_p_joined_filtered %>% group_by(Kulturgruppe, NUTS_2) %>%summarise(sum_FLAECHE_ha=sum(FLAECHE_HA)), aes(x = Kulturgruppe,y=sum_FLAECHE_ha)) +
+#   geom_col() + facet_wrap(~NUTS_2)+ theme(axis.text.x=element_text(angle=90,hjust=1))
+#   labs(title = "crop disrtbution across NUTS_2", 
+#        x = "NUTS_2", y = "area in ha")
 
 #17.04.23
 ## After excluding NAs for NUTS_2 there are 516,915 fields with an area of 739,047 ha including "Brache"
@@ -213,24 +213,24 @@ glimpse(zentroid_p_joined_filtered)
 zentroid_p_joined_filtered$P_level <- as.numeric(zentroid_p_joined_filtered$P_level)
 zentroid_p_joined_filtered<- zentroid_p_joined_filtered %>% mutate(P_level=P_level/10)
 
-# P_level for each county, boxplot
-ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
-  geom_boxplot() + facet_wrap(~NUTS_2)
-  labs(title = "Frequency of categories in soil_quality", 
-       x = "NUTS_2", y = "Frequency")
-
-# histogram of P-levels all counties, we have more P_levels below 4 skewed to the left side
-
-ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
-  geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
-    labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
-
-
-# boxplot for all the region of bawue
-ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
-  geom_boxplot() +
-labs(title = "", 
-     x = "", y = "P_level")
+# # P_level for each county, boxplot
+# ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+#   geom_boxplot() + facet_wrap(~NUTS_2)
+#   labs(title = "Frequency of categories in soil_quality", 
+#        x = "NUTS_2", y = "Frequency")
+# 
+# # histogram of P-levels all counties, we have more P_levels below 4 skewed to the left side
+# 
+# ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+#   geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
+#     labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+# 
+# 
+# # boxplot for all the region of bawue
+# ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+#   geom_boxplot() +
+# labs(title = "", 
+#      x = "", y = "P_level")
 
 
 
@@ -297,38 +297,38 @@ zentroid_p_joined_filtered %>% filter(P_level >5.8)
 ##########################################################################################################################################################################################
 # Intermediate result: P_levels in the region in the status quo
 
-ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
-  geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
-  labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
-
-
-# histograms per counties at NUTS_2
-# How do P_levels of fields differ regionally?
-levels(zentroid_p_joined_filtered$NUTS_2.y)
-
-ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
-  geom_histogram(color = "black", fill = "white", binwidth = 0.5) + facet_wrap(~NUTS_2.y)+
-  labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
-
-
-# based on buczko categories P<=3.34 low; >3.34 and <=5.82 medium, and >5.82 high
-ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2.y, fill=P_level_category)) +
-  geom_bar() +
-  labs(title = "Frequency of categories in soil_quality", 
-       x = "NUTS_2", y = "Frequency")
-
-
-# bocplot for all the region of bawue
-ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
-  geom_boxplot() + facet_wrap(~NUTS_2.y)+
-  labs(title = "", 
-       x = "", y = "P_level")
-
-
-  ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
-    geom_boxplot() + 
-  labs(title = "", 
-       x = "", y = "P_level")
+# ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+#   geom_histogram(color = "black", fill = "white", binwidth = 0.5) +
+#   labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+# 
+# 
+# # histograms per counties at NUTS_2
+# # How do P_levels of fields differ regionally?
+# levels(zentroid_p_joined_filtered$NUTS_2.y)
+# 
+# ggplot(zentroid_p_joined_filtered, aes(x =P_level)) +
+#   geom_histogram(color = "black", fill = "white", binwidth = 0.5) + facet_wrap(~NUTS_2.y)+
+#   labs(x = "P_level", y = "Frequency", title = "Histogram of P_levels all counties")
+# 
+# 
+# # based on buczko categories P<=3.34 low; >3.34 and <=5.82 medium, and >5.82 high
+# ggplot(zentroid_p_joined_filtered, aes(x = NUTS_2.y, fill=P_level_category)) +
+#   geom_bar() +
+#   labs(title = "Frequency of categories in soil_quality", 
+#        x = "NUTS_2", y = "Frequency")
+# 
+# 
+# # bocplot for all the region of bawue
+# ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+#   geom_boxplot() + facet_wrap(~NUTS_2.y)+
+#   labs(title = "", 
+#        x = "", y = "P_level")
+# 
+# 
+#   ggplot(zentroid_p_joined_filtered, aes(y = P_level)) +
+#     geom_boxplot() + 
+#   labs(title = "", 
+#        x = "", y = "P_level")
 
 
 
@@ -491,10 +491,10 @@ write_xlsx(x=Energie_proha, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Lan
 
 #Calculating MJNEL demand per county, this demand needs to be covered by threee crop types Gr, KL, SM
 # Just doing some renaming
-yields_soilqual_Fut<-yields_soilqual_Fut %>% mutate(Intensity=case_when(
-                           Intensitaet=="niedrig" ~ c("low"),
-                           Intensitaet=="mittel" ~c("medium"),
-                           Intensitaet=="hoch"   ~c("high")))
+
+
+yields_soilqual_Fut <- yields_soilqual_Fut %>% select(`crop abrre`, Intensity="Intensitaet", `Ertrag (10 MJ NEL/ha)`)
+
                         
 # Adding the per ha production of MJNEL information to futterbau_bedarf
 futterbau_bedarf_joined<-futterbau_bedarf %>% left_join(yields_soilqual_Fut %>% rename(Kennung=`crop abrre`, Bodenguete="Intensity"), by=c("Kennung", "Bodenguete"))
@@ -526,8 +526,8 @@ futterbau_bedarf_joined   <-futterbau_bedarf_joined %>% filter(!Kennung=="B")
 dim(futterbau_bedarf_joined)
 
 futterbau_bedarf_kreis <-   futterbau_bedarf_joined %>% select(NUTS_2,Bodenguete, Energiebedarf_Schlag) %>% 
-                            group_by(NUTS_2, Bodenguete) %>% summarize(Energiebedarf_kreis_MJNEL=sum(Energiebedarf_Schlag))%>%
-                            select(couties="NUTS_2", management="Bodenguete", Energiebedarf_kreis_MJNEL)
+                            group_by(NUTS_2) %>% summarize(Energiebedarf_kreis_MJNEL=sum(Energiebedarf_Schlag))%>%
+                            select(couties="NUTS_2",  Energiebedarf_kreis_MJNEL)
 
 head(futterbau_bedarf_kreis)  
 
@@ -647,21 +647,21 @@ Cr_to_filter
 
 
 ################################################################################################################################
-## hier wird nur angeschaut, nix gebaut!!!
-# kommune CR_id wird weiter unten generiert
-
-
-
-# in welchen kreisen kommt die Cr_to_filter am häufigsten vor? code only works if kommune_CRid is unfiltered
-Rotations_tristan
-kommune_CRid
-Cr_to_filter
-
-# wieviele der gefiltereten sind in den Kreisen verfügbar
-kommune_CRid %>% filter(CRid %in% Cr_to_filter$CRid) %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
-
-# wieviele sind insgesamt vefügabr je kreis
-kommune_CRid %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
+# ## hier wird nur angeschaut, nix gebaut!!!
+# # kommune CR_id wird weiter unten generiert
+# 
+# 
+# 
+# # in welchen kreisen kommt die Cr_to_filter am häufigsten vor? code only works if kommune_CRid is unfiltered
+# Rotations_tristan
+# kommune_CRid
+# Cr_to_filter
+# 
+# # wieviele der gefiltereten sind in den Kreisen verfügbar
+# kommune_CRid %>% filter(CRid %in% Cr_to_filter$CRid) %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
+# 
+# # wieviele sind insgesamt vefügabr je kreis
+# kommune_CRid %>% group_by(LAU_ID) %>% summarize(n=n()) %>% filter(n>2)
 
 
 
@@ -779,8 +779,8 @@ summary(Cr_bawue_distinct$Gewicht)
            mutate(Gr_Glied5=Gr, KG_Glied5=KG, KM_Glied5=KM, WG_Glied5=WG, 
                  SM_Glied5=SM, WW_Glied5=WW, WR_Glied5=WR, Win_Glied5=Win,
                  SG_Glied5=SG, Ha_Glied5=Ha, ZR_Glied5=ZR, Ka_Glied5=Ka,
-                 Rog_Glied5=Rog, KL_Glied5=KL) %>%
-           select(-c("-":"ZR")) %>% select(-name)
+                 Rog_Glied5=Rog, KL_Glied5=KL)
+           
 
 
   Glied5 <-Glied5[,-c(3:18)]  
@@ -801,26 +801,26 @@ rm(glied2, glied3, glied4 ,glied5)
 rm(pivotlonger_test)
 
 
-# 24.04.23 now it is running until here
+
 
 ##################################################################################################################################################
 ##################################################################################################################################################
 
-#### Create CR_Glieder - loaded as a set
+#### Creating set of crop position within a crop rotation (ex: GR_Glied1, Gr_Glied2,…, Gr_Glied5)
 CR_Glieder <- colnames(rotation_matrix_full) %>% as_tibble()
 CR_Glieder <- CR_Glieder[-1,]
 CR_Glieder <- CR_Glieder %>% rename(Cr_Glieder=value)
 
 
 
-## Verknüpfung mit crops
+## creating Connection between CR_Glieder and the crop set 
 crops <- Cr_bawue_distinct %>% distinct(Glied1)
 crop_CR_matrix <- rotation_matrix_full %>% slice(1:14)
 crop_CR_matrix <- cbind(crops, crop_CR_matrix)
 crop_CR_matrix <- crop_CR_matrix %>% select(-CRid)
 
 
-## Verknüpfung mit crops
+## Connection with crops
 values_list = c("Gr", "KG", "KM", "WG", "SM", "WW", "WR", "Win", "SG", "Ha", "ZR", "Ka","KL", "Rog")
 for (value in values_list) {
   column_name1 = paste0(value, "_Glied1")
@@ -840,7 +840,7 @@ for (value in values_list) {
 crop_CR_matrix<-crop_CR_matrix %>% rename(crop=Glied1)
 str(crop_CR_matrix)
 
-#check
+#checking the results and sets beween GAMS and here, no differences are allowed
 CR_Glieder
 CR_Glieder_cropmatrix <- colnames(crop_CR_matrix) %>% as_tibble()
 CR_Glieder_cropmatrix<-CR_Glieder_cropmatrix[-1,]
@@ -856,49 +856,56 @@ crop_gams<-c("Gr", "Ha", "Ka", "KG", "KM", "SG", "SM", "WG", "Win", "WR", "WW", 
 setdiff(crop, crop_gams)
 setdiff(crop_gams, crop)
 
-# check: Belegung der sets, sets sind identisch
+# check: sets for CR_Glieder and crops are identical to GAMS
 
-### Verknuepfe Info zwischen CR_id=row_id und Kommunen_information
+## Creating Connection between CR_id and NUTS_2 region. 
+## Which crop rotation occurs in which region. More than four times the same crop in rotations excluded.
+## In GAMS the model can only choose crop rotations that crop Rota generated per region
+
 head(rotation_matrix)
 
 kommune_CRid <- rotation_matrix %>% left_join(Rotations_tristan, by="Kombo")
 kommune_CRid <- kommune_CRid %>% select(CRid, LAU_ID)
-kommune_CRid
+head(kommune_CRid)
 
 kommune_CRid<-kommune_CRid %>% mutate(AGS_0_2=LAU_ID)
 kommune_CRid<- kommune_CRid %>% select(-LAU_ID) %>% mutate(value=1)
 head(kommune_CRid)
 
-## difference kommunen vektor
+## Pivoting to get a nicer table
 
 kommune_CRid <-kommune_CRid %>%pivot_wider(names_from = AGS_0_2, values_from = value, values_fill = 0)
 kommune_CRid <- kommune_CRid %>% mutate(CR_id=CRid) %>% select(-CRid) 
 kommune_CRid <-kommune_CRid[,c(45, 1:44)]
+head(kommune_CRid)
 
-summary(test)
+
 
 
 ##################################################################################################################################################
 ##################################################################################################################################################
-# writing out files related to crop rotation
+# writing out files related to crop rotations and Crop Rota
 
 # Crop_glieder_set
-write_xlsx(x=CR_Glieder, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/CR_Glieder.xlsx", col_names = FALSE)
+write_xlsx(x=CR_Glieder, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CR_Glieder.xlsx", col_names = FALSE)
 
 #crop_CR_matrix, connect crop rotations with crop
-write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_CR_matrix.xlsx", col_names = TRUE)
+write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/crop_CR_matrix.xlsx", col_names = TRUE)
 
 
 #### kommune_CR_ID, welche croprot kommt in welcher kommune vor?
-write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/kommune_CRid.xlsx", col_names = TRUE)
+write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kommune_CRid.xlsx", col_names = TRUE)
 
 ## rotation_matrix_full
-write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/rotation_matrix_full.xlsx", col_names = TRUE)
+write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/rotation_matrix_full.xlsx", col_names = TRUE)
 
 
 #######################################################################################################################################################
 ###################################################################################################################################################
 #####
+
+
+
 
 # crop rota files tristan
 CR_Glieder                                      #|should be ready |contains rotation glied
@@ -906,9 +913,8 @@ crop_CR_matrix                                  #|should be ready |contains crop
 rotation_matrix_full
 kommune_CRid
 
-
+### Creating connection between CRid and the crop. Information is necessary for GAMS
 ### CR_id must be linked with crops, where is the CR_id coming from?
-rotation_matrix
 summary(rotation_matrix)
 head(rotation_matrix)
 
@@ -944,34 +950,22 @@ CR_id_crop <- rotation_matrix %>% select(CRid, Gr:ZR)
 
 ##############################################################################################################################################################################
 #### write CR_id_crop
-write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/CR_id_crop.xlsx", col_names = T)
+write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CR_id_crop.xlsx", col_names = T)
 
 ###############################################################################################################################################################################
 
 
 
 
+# Calculation data preparation
+################################################################################################################################################################################
 
 
-
-# files from own production
-kommune
-kreis
-Landuse_plots_P
-Landuse_SQ_P
-
-
-
-
-
-####################################################################################################################################
-#####################################################################################################################################
-
-### Daten aus den Kalkulationsdaten des LEL
-### Vorbereitung für GAMS input
-
-# kulturspezifische Ertragsdaten und Preisdaten
-
+# Preparation of the calculation data for GAMS 
+# Data can be found under GAMS_P/Input_data/Kalkulationsdaten
+# Data source is the LEL
+###########################################################################################################################################################################
+############################################################################################################################################################################
 # input <- choose.files()
 #  input
 
@@ -982,9 +976,10 @@ setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftl
 ######### !!!! Excel file ist gelinkt zu Marktfruechte und Futterbau Klakulationstabellen, aenderungen in diesen Tabellen veraendern die input daten
 ######### !!!! Betrifft vor allem die Kostenseite, zum Beispiel Aenderung des Duengerpreises und des Dieselpreises auf 2022 Niveau
 #########      Sollte Ertragsdaten nicht betreffen
+
+# reading in data
 Ackerkulturen <- read_excel("extracted_calculation_data.xlsx", sheet="Ackerkulturen")
 Futterbau <- read_excel("extracted_calculation_data.xlsx", sheet="Futterbau")
-
 excel_sheets("extracted_calculation_data.xlsx")
 
 
@@ -1007,10 +1002,10 @@ price_crop_Fut
 
 
 ## writing out parameters yield and prices
-write_xlsx(x=yields_soilqual_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/yields_soilqual_Ack.xlsx", col_names = T)
-write_xlsx(x=yields_soilqual_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/yields_soilqual_Fut.xlsx", col_names = T)
-write_xlsx(x=price_crop_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/price_crop_Ack.xlsx", col_names = T)
-write_xlsx(x=price_crop_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/price_crop_Fut.xlsx", col_names = T)
+write_xlsx(x=yields_soilqual_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/yields_soilqual_Ack.xlsx", col_names = T)
+write_xlsx(x=yields_soilqual_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/yields_soilqual_Fut.xlsx", col_names = T)
+write_xlsx(x=price_crop_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/price_crop_Ack.xlsx", col_names = T)
+write_xlsx(x=price_crop_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/price_crop_Fut.xlsx", col_names = T)
 
 
 ##############################################################################################################################################################################
@@ -1023,22 +1018,82 @@ variable_cost_futterbau <- Futterbau %>% select(`crop abrre`,Intensitaet,`V. Kos
 
 
 ## writing out variable cost parameters
-write_xlsx(x=variable_cost_ackerbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/variable_cost_ackerbau.xlsx", col_names = T)
-write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/variable_cost_futterbau.xlsx", col_names = T)
+write_xlsx(x=variable_cost_ackerbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/variable_cost_ackerbau.xlsx", col_names = T)
+write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/variable_cost_futterbau.xlsx", col_names = T)
 
-#####################################################################################################################################################################################
+######################################################################################################################################################
+## P Verbrauch je crop in abhängigkeit von soil_qual und intensitaet generated out extracted calculation data. 
+## Average demands per crop
+P1 <- Ackerkulturen %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
+P2 <- Futterbau %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
 
-## Creating county_BG; verbindet intensity und soil_qual im GAMS script
-kreis
-Landuse_plots_P
+P_Verbrauch <- rbind(P1, P2)
+P_Verbrauch
 
-county_BG <- Landuse_plots_P %>% select(NUTS_2, Bodenguete) %>%distinct(NUTS_2, Bodenguete) %>% mutate(value=1) %>% pivot_wider(names_from = Bodenguete, values_from = value, values_fill = 0)
-county_BG  
 
-write_xlsx(x=county_BG , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/county_BG .xlsx", col_names = T)
+new_df <- expand.grid(`crop abrre`=unique(P_Verbrauch$`crop abrre`),
+                      Intensitaet= unique(P_Verbrauch$Intensitaet),
+                      county=kreis$NUTS_2) %>% as_tibble()
 
-setdiff(kreis$NUTS_2, county_BG$NUTS_2)
-setdiff(county_BG$NUTS_2, kreis$NUTS_2)
+P_Verbrauch<- left_join(new_df, P_Verbrauch, by=c("crop abrre", "Intensitaet"))
+
+
+summary(P_Verbrauch)
+
+
+write_xlsx(x=P_Verbrauch , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/P_Verbrauch.xlsx", col_names = T)
+
+##################################################################################################################################################################
+
+# Creating restrictions 
+# Restriction for silage maize and potatoe
+sm_county<- zentroid_p_joined_filtered %>% filter(Kennung=="SM")
+head(sm_county)
+
+sm_county<-sm_county %>% select(counties="NUTS_2", crop="Kennung", management="Bodenguete", FLAECHE_HA)
+
+sm_county <- sm_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+head(sm_county)
+
+# Restriction for potatoes
+Ka_county<- zentroid_p_joined_filtered %>% filter(Kennung=="Ka")
+head(Ka_county)
+
+Ka_county<-Ka_county %>% select(counties="NUTS_2", crop="Kennung", management="Bodenguete", FLAECHE_HA)
+
+
+Ka_county <- Ka_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+Ka_county
+
+# Beschraenkung KArtoffel Silomais auf die Ganze region Bawü
+Ka_county %>%ungroup() %>%summarize(bawue_ka_ha=sum(sum_ha_sm))  # in total 5395ha Kartoffel in Bawü
+
+sm_county %>%ungroup() %>%summarize(bawue_sm_ha=sum(sum_ha_sm))  # 133,251 ha Silomais in Bawü
+
+## Creating a global restriction on all crops, they can expand max 25% per NUTS_2
+## waehlen einer globalen beschraenkung 1.25 * Flaeche je crop, je regio in diesem Fall der Kreis
+crop_kreis_res<-zentroid_p_joined_filtered %>% select(counties="NUTS_2", crop="Kennung", management="Bodenguete", FLAECHE_HA)
+
+crop_kreis_res <- crop_kreis_res %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
+crop_kreis_res <- crop_kreis_res %>% filter(!crop=="B")
+head(crop_kreis_res)
+
+## write out restriction datasets
+write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Ka_county.xlsx", col_names = T)
+write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/sm_county.xlsx", col_names = T)
+write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/crop_kreis_res.xlsx", col_names = T)
+
+
+
+
+
+
+
+#27.04.23 checked until here - integration of P,N, K is following
+
+
+### Trennung von Phosphat angebot tierisch und chemisch per NUTS_2 Ebene
+
 
 ########################################################################################################################################################################################
 
@@ -1094,28 +1149,6 @@ Tierzahlen_dueng %>% summarise(P_org_Bawue=sum(P_org_kg/1000))
 
 
 
-## P Verbrauch je crop in abhängigkeit von soil_qual und intensitaet
-P1 <- Ackerkulturen %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
-P2 <- Futterbau %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
-
-P_Verbrauch <- rbind(P1, P2)
-P_Verbrauch
-
-# expan.grid für jeden Kreis
-
-
-new_df <- expand.grid(`crop abrre`=unique(P_Verbrauch$`crop abrre`),
-                      Intensitaet= unique(P_Verbrauch$Intensitaet),
-                      county=kreis$NUTS_2) %>% as_tibble()
-
-P_Verbrauch<- left_join(new_df, P_Verbrauch, by=c("crop abrre", "Intensitaet"))
-
-#P_Verbrauch<- P_Verbrauch[,c(4,1,2,3)]
-
-summary(P_Verbrauch)
-
-
-write_xlsx(x=P_Verbrauch , path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/P_Verbrauch.xlsx", col_names = T)
 
 
 # where is the P_soil class at the moment
@@ -1124,59 +1157,15 @@ Landuse_plots_P
 summary(Landuse_plots_P$P.2013...2)
 
 ##########################################################################################################################################################################################
-# Restriction for silage maize and 
-sm_county<- zentroid_p %>% filter(Kennung=="SM")
-head(sm_county)
-
-sm_county<-sm_county %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
-#sm_county <- sm_county %>% group_by(NUTS_2, Kennung)
-sm_county <-sm_county %>% mutate(management= case_when(
-                                   Bodenguete=='gering' ~c("niedrig"),
-                                   Bodenguete=='mittel' ~c("mittel"),
-                                   Bodenguete=='hoch' ~c("hoch")))
-
-sm_county <- sm_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
-
-
-# Restriction for potatoes
-Ka_county<- zentroid_p %>% filter(Kennung=="Ka")
-head(Ka_county)
-
-Ka_county<-Ka_county %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
-#Ka_county <- Ka_county %>% group_by(NUTS_2, Kennung)
-Ka_county <-Ka_county %>% mutate(management= case_when(
-  Bodenguete=='gering' ~c("niedrig"),
-  Bodenguete=='mittel' ~c("mittel"),
-  Bodenguete=='hoch' ~c("hoch")))
-
-Ka_county <- Ka_county %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
-Ka_county
-
-# Beschraenkung KArtoffel Silomais auf die Ganze region Bawü
-Ka_county %>%ungroup() %>%summarize(bawue_ka_ha=sum(sum_ha_sm))  # in total 5396ha Kartoffel in Bawü
-
-sm_county %>%ungroup() %>%summarize(bawue_sm_ha=sum(sum_ha_sm))  # 133,258 ha Silomais in Bawü
-
-
-## waehlen einer globalen beschraenkung 1.25 * Flaeche je crop, je regio in diesem Fall der Kreis
-crop_kreis_res<-zentroid_p %>% select(counties="NUTS_2", crop="Kennung", Bodenguete, FLAECHE_HA)
-crop_kreis_res <-crop_kreis_res %>% mutate(management= case_when(
-                          Bodenguete=='gering' ~c("niedrig"),
-                          Bodenguete=='mittel' ~c("mittel"),
-                          Bodenguete=='hoch' ~c("hoch")))
-
-crop_kreis_res <- crop_kreis_res %>% select(counties, crop, FLAECHE_HA) %>% group_by(counties,crop) %>% summarize(sum_ha_sm=sum(FLAECHE_HA))
-crop_kreis_res <- crop_kreis_res %>% filter(!crop=="B")
 
 
 
 
 
-## write out restriction datasets
 
-write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/Ka_county.xlsx", col_names = T)
-write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/sm_county.xlsx", col_names = T)
-write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/crop_kreis_res.xlsx", col_names = T)
+
+
+
 
 
 
