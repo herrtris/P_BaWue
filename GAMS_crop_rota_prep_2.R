@@ -970,7 +970,7 @@ write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwi
 #  input
 
 getwd()
-setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten")
+#setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten")
 
 # reading data in
 ######### !!!! Excel file ist gelinkt zu Marktfruechte und Futterbau Klakulationstabellen, aenderungen in diesen Tabellen veraendern die input daten
@@ -1024,24 +1024,26 @@ write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dok
 ######################################################################################################################################################
 ## P Verbrauch je crop in abhängigkeit von soil_qual und intensitaet generated out extracted calculation data. 
 ## Average demands per crop
-P1 <- Ackerkulturen %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
-P2 <- Futterbau %>% select(`crop abrre`, Intensitaet, "P (kg/ha)")
-
-P_Verbrauch <- rbind(P1, P2)
-P_Verbrauch
 
 
-new_df <- expand.grid(`crop abrre`=unique(P_Verbrauch$`crop abrre`),
-                      Intensitaet= unique(P_Verbrauch$Intensitaet),
+P1 <- Ackerkulturen %>% select(`crop abrre`, Intensitaet,"N (kg/ha)","P (kg/ha)" ,"K (kg/ha)")
+P2 <- Futterbau %>% select(`crop abrre`, Intensitaet, "N (kg/ha)","P (kg/ha)" ,"K (kg/ha)")
+
+Duengebedarf_crop_Int <- rbind(P1, P2)
+Duengebedarf_crop_Int
+
+# new_df is needed to get the county information
+new_df <- expand.grid(`crop abrre`=unique(Duengebedarf_crop_Int$`crop abrre`),
+                      Intensitaet= unique(Duengebedarf_crop_Int$Intensitaet),
                       county=kreis$NUTS_2) %>% as_tibble()
 
-P_Verbrauch<- left_join(new_df, P_Verbrauch, by=c("crop abrre", "Intensitaet"))
+Duengebedarf_crop_Int<- left_join(new_df, Duengebedarf_crop_Int, by=c("crop abrre", "Intensitaet"))
 
 
-summary(P_Verbrauch)
+summary(Duengebedarf_crop_Int)
 
 
-write_xlsx(x=P_Verbrauch , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/P_Verbrauch.xlsx", col_names = T)
+write_xlsx(x=Duengebedarf_crop_Int , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Duengebedarf_crop_Int.xlsx", col_names = T)
 
 ##################################################################################################################################################################
 
