@@ -170,47 +170,86 @@ milchkuehe %>% print(n=Inf)
 
 #25.05. other cows sind mutterkuehe - diese werden gesondert betrachtet, aber mit den selben shares
 
-milchkuehe<-milchkuehe %>% mutate(all_cows=cows+other_cows) %>% select(NUTS_2, region, `Fleckvieh %`:all_cows)
+milchkuehe<-milchkuehe %>% mutate(all_cows=cows+other_cows) 
 milchkuehe
 
 
 
 # wie weit bin ich von den 100% je kreis weg?
-milchkuehe<-milchkuehe %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check)
-milchkuehe
+# fuer Freiburg kreise werden vorderwaelder mitberuecksichtigt
+
+
+  
+Rest <- milchkuehe %>% filter(!NUTS_2 %in% c("DE131", "DE132", "DE133", "DE134", "DE135", "DE136", "DE137", "DE13A", "DE139", "DE138"))
+freiburg <- milchkuehe %>% filter(NUTS_2 %in% c("DE131", "DE132", "DE133", "DE134", "DE135", "DE136", "DE137", "DE13A", "DE139", "DE138"))
+  
+Rest<-Rest %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check)
+
+freiburg<-freiburg %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`, `Vorderwälder %`)) %>% mutate(diff=100-check)
+
+  
+
+
+
+
+# Im RP Freiburg gibt es verdammt viele Vorderwälder ca. 10.4% - sollte ich wahrscheinlich noch integrieren
+# Vorderwaelder haben eine Durchschnittsleistung von 5647kg pro jahr
 milchkuehe %>% print(n=Inf)
 
 
 # easy approach: diff wird einfach proportional auf alle Rassen aufgeschlagen
 # Proportionales aufschlage der Prozentzahlen, sodass 100% entstehen
-milchkuehe<-milchkuehe %>% mutate(`Fleckvieh %`=`Fleckvieh %`+diff/4,
+Rest<-Rest  %>% mutate(`Fleckvieh %`=`Fleckvieh %`+diff/4,
                       `Braunvieh %`=`Braunvieh %`+diff/4,
                       `Holsteins-Rbt`=`Holsteins-Rbt`+diff/4,
                       `Holstein-sbt %`=`Holstein-sbt %`+diff/4)
 
-milchkuehe %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check)
 
 
-adjusted_race_proportions <- milchkuehe %>% select(NUTS_2:`Holsteins-Rbt`)
-adjusted_race_proportions %>% mutate(sum(`Braunvieh %`,`Fleckvieh %`, `Holstein-sbt %`,`Holsteins-Rbt`)) %>% print(n=Inf)
+freiburg<-freiburg  %>% mutate(`Fleckvieh %`=`Fleckvieh %`+diff/5,
+                       `Braunvieh %`=`Braunvieh %`+diff/5,
+                       `Holsteins-Rbt`=`Holsteins-Rbt`+diff/5,
+                       `Holstein-sbt %`=`Holstein-sbt %`+diff/5,
+                       `Vorderwälder %`=`Vorderwälder %`+diff/5)
 
 
 
-milchkuehe<-milchkuehe %>% select(-c(diff, check, `Vorderwälder %`, `Hinterwälder %`))
+
+
+Rest %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check) %>% print(n=Inf)
+freiburg %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`, `Vorderwälder %`)) %>% mutate(diff=100-check) %>%  print(n=Inf)
+
+
+
+rbind(Rest,freiburg) %>% print(n=Inf)
+milchkuehe <- rbind(Rest,freiburg)
+
+
+
+adjusted_race_proportions <- milchkuehe %>% select(NUTS_2:`Vorderwälder %`)
+adjusted_race_proportions %>% mutate(sum(`Braunvieh %`,`Fleckvieh %`, `Holstein-sbt %`,`Holsteins-Rbt`, `Vorderwälder %`)) %>% print(n=Inf)
+
+
+
+milchkuehe<-milchkuehe %>% select(-c(diff, check, `Hinterwälder %`))
 milchkuehe %>% print(n=Inf)
+
+mutterkuhhaltung <- milchkuehe %>% select(NUTS_2, region, cows, other_cows)
 
 # splitting the cows by races
 # Anzahl der Kühe je Kreis, je Rasse
-milchkuehe<-milchkuehe %>% mutate(Fleckvieh=all_cows*`Fleckvieh %`/100,
-                                  Braunvieh=all_cows*`Braunvieh %`/100,
-                                  Holstein_rbt=all_cows*`Holsteins-Rbt`/100,
-                                  Holstein_sbt=all_cows*`Holstein-sbt %`/100)
+milchkuehe<-milchkuehe %>% mutate(Fleckvieh=cows*`Fleckvieh %`/100,
+                                  Braunvieh=cows*`Braunvieh %`/100,
+                                  Holstein_rbt=cows*`Holsteins-Rbt`/100,
+                                  Holstein_sbt=cows*`Holstein-sbt %`/100,
+                                  Vorderwaelder=cows*`Vorderwälder %`/100)
 
 milchkuehe
 milchkuehe$Fleckvieh<-round(milchkuehe$Fleckvieh,digits = 0)
 milchkuehe$Braunvieh<-round(milchkuehe$Braunvieh,digits = 0)
 milchkuehe$Holstein_rbt<-round(milchkuehe$Holstein_rbt,digits = 0)
 milchkuehe$Holstein_sbt<-round(milchkuehe$Holstein_sbt,digits = 0)
+milchkuehe$Vorderwaelder<-round(milchkuehe$Vorderwaelder,digits = 0)
 
 milchkuehe %>% print(n=Inf)
 
@@ -231,18 +270,21 @@ if(laptob_work==TRUE) {
 avg_milk_race <- read_excel("Milchleistung_je_kreis.xlsx",sheet = "avg_leistung_rasse_2021" )
 
 avg_milk_race 
-milchkuehe<-milchkuehe %>% select(NUTS_2:region, Fleckvieh:Holstein_sbt) %>% pivot_longer(cols = c(Fleckvieh, Braunvieh, Holstein_rbt, Holstein_sbt), names_to = "Race")
+
+
+
+milchkuehe<-milchkuehe %>% select(NUTS_2:region, Fleckvieh:Vorderwaelder) %>% pivot_longer(cols = c(Fleckvieh, Braunvieh, Holstein_rbt, Holstein_sbt, Vorderwaelder), names_to = "Race")
 milchkuehe <- milchkuehe %>% rename(No_animals=value)
 milchkuehe
 milchkuehe %>% print(n=Inf)
 
-# Durchnittsdaten je Rasse für Bawue, kreisdurchschnitte sind nicht verfügbar, DAten für 2021
+# Durchnittsdaten je Rasse für Bawue, kreisdurchschnitte sind nicht verfügbar, DAten für 2021, Seite 54
 milchkuehe_2 <-milchkuehe %>% mutate(avg_milk_production_race=case_when(
-    Race=='Fleckvieh'       ~ 7966,  #Annahme Durchschnitt
+    Race=='Fleckvieh'       ~ 7966,  #Annahme Durchschnitt seite 54
     Race=='Braunvieh'       ~ 7751,     #Annahme Durschnitt
     Race=='Holstein_rbt'    ~ 8518,      #Annahme Milchkuh
     Race=='Holstein_sbt'    ~ 9522,    #Annahme Durchscnitt
-    
+    Race=='Vorderwaelder'    ~ 5647 #Annahme Durchschnitt
   ))
 
 
@@ -256,7 +298,7 @@ avg_milk_prod_race<-milchkuehe_2 %>%  group_by(NUTS_2) %>% summarize(animals_per
 
 avg_milk_prod_race
 
-# Vergleich zu den LKV durchschnittsdaten je kreis
+# Vergleich zu den LKV durchschnittsdaten je kreis "tatsaechliche Daten"
 ## get in average per kreis
 avg_milk_production_2021
 
@@ -303,11 +345,20 @@ avg_milk_prod_race
 diskrepanz<-avg_milk_prod_race %>% mutate(diskrepanz_kreisdurchschnitt=`Milch kg` - avg_milk_prod) %>% select(NUTS_2, diskrepanz_kreisdurchschnitt)
 diskrepanz
 
+diskrepanz_revisited<-avg_milk_prod_race %>% rename(LKV_GEsamtdurchschnitt=`Milch kg`, Durchschnitt_rassenbasis=avg_milk_prod, total_milk_prod_tonnes=sum_milk_prod)
+diskrepanz_revisited<-diskrepanz_revisited %>% mutate(diff=LKV_GEsamtdurchschnitt-Durchschnitt_rassenbasis)
+diskrepanz_revisited<- diskrepanz_revisited %>% mutate("%Abweichung"=(LKV_GEsamtdurchschnitt-Durchschnitt_rassenbasis)/LKV_GEsamtdurchschnitt*100)
+diskrepanz_revisited %>% print(n=Inf)
+
 
 ######## linear adjustment to match the county average production level
 # der berechnete durchschnitt wird angepasst um den Kreisdurchschnitt zu treffen
 milchkuehe_2<-milchkuehe_2 %>% left_join(diskrepanz, by="NUTS_2")
 milchkuehe_2
+
+## diskrepanz uebersicht
+milchkuehe_2 %>% print(n=Inf)
+
 
 # Diskrepanz wird auf jede Rasse auf oder abgeschlagen
 milchkuehe_2<-milchkuehe_2 %>% mutate(adjusted_avg_milk_production=avg_milk_production_race+diskrepanz_kreisdurchschnitt)
@@ -318,8 +369,15 @@ milchkuehe_2<-milchkuehe_2 %>% mutate(adj_milk_production=No_animals*adjusted_av
 
 # check if Milchleistung matches now den Kreisdurchschnitt der LKV per region
 avg_milk_production_2021
-adj_avg_milk_production<- milchkuehe_2 %>%  group_by(NUTS_2) %>% summarize(animals_per_region=sum(No_animals, na.rm=T), sum_milk_prod=sum(adj_milk_production, na.rm=T))%>%
-                  mutate(avg_milk_prod=sum_milk_prod/animals_per_region)
+adj_avg_milk_production<- milchkuehe_2 %>%  group_by(NUTS_2) %>% summarize(animals_per_region=sum(No_animals, na.rm=T), adjusted_sum_milk_prod=sum(adj_milk_production, na.rm=T))%>%
+                  mutate(adjusted_avg_milk_prod=adjusted_sum_milk_prod/animals_per_region)
+
+
+avg_milk_production_2021<-avg_milk_production_2021 %>% left_join(adj_avg_milk_production%>% select(NUTS_2, adjusted_avg_milk_prod), by="NUTS_2")%>%
+                                                        mutate(check=`Milch kg`-adjusted_avg_milk_prod)
+print(avg_milk_production_2021, n=Inf)
+
+# Result, the adjustement was succesful
 
 
 #adjusted average milk production contains the values needed, die Milchleistung je Tier wurde hochskaliert nicht die Tierzahl!
@@ -359,7 +417,7 @@ performance_level
 Fleckvieh<-P_org_milch %>% filter(Race=="Fleckvieh")
 sbt_rbt <- P_org_milch %>% filter(Race=="Holstein_sbt" | Race=="Holstein_rbt")
 Braunvieh <- P_org_milch %>% filter(Race=="Braunvieh")
-
+Vorderwaelder <-P_org_milch %>% filter(Race=="Vorderwaelder")
 
 
 
@@ -390,8 +448,18 @@ Braunvieh<- Braunvieh %>%
             ))
 
 
+Vorderwaelder<- Vorderwaelder %>%
+  mutate(performance_level = case_when(
+    round(Vorderwaelder$adjusted_avg_milk_production,-3) == 4000 ~ 1,
+    round(Vorderwaelder$adjusted_avg_milk_production,-3) == 5000 ~ 1,
+    round(Vorderwaelder$adjusted_avg_milk_production,-3) == 6000 ~ 1,
+    round(Vorderwaelder$adjusted_avg_milk_production,-3) == 7000 ~ 2,
+    round(Vorderwaelder$adjusted_avg_milk_production, -3) == 8000 ~ 3
+  ))
 
-NUTS_2_milk_performance_level <- rbind(Fleckvieh, Braunvieh,sbt_rbt)
+
+
+NUTS_2_milk_performance_level <- rbind(Fleckvieh, Braunvieh,sbt_rbt, Vorderwaelder)
 
 
 
@@ -399,14 +467,14 @@ NUTS_2_milk_performance_level <- rbind(Fleckvieh, Braunvieh,sbt_rbt)
 Fleckvieh <-Fleckvieh %>%  left_join(performance_level%>% filter(Rasse=="Fleckvieh"), by="performance_level")
 Braunvieh <-Braunvieh %>%  left_join(performance_level%>% filter(Rasse=="Fleckvieh"), by="performance_level")
 sbt_rbt   <- sbt_rbt %>% left_join(performance_level%>% filter(Rasse=="Sbt_HF"), by="performance_level")
-
+Vorderwaelder <- Vorderwaelder %>% left_join(performance_level %>% filter(Rasse=="Fleckvieh"), by="performance_level")
 
 ### Getting the scaling factors. Ich möchte die Düngermenge anpassen basierend auf die durchschnittliche Milchleistung je Kreis
 Fleckvieh
 #FM_kg_Tier_jahr,TM_kg_Tier_jahr,N_kg_Tier_jahr,P205_kg_Tier_jahr, K20_kg_Tier_jahr Kalkulation_milchleistung
 
-cows_PKN <- rbind(Fleckvieh,Braunvieh,sbt_rbt)
- 
+cows_PKN <- rbind(Fleckvieh,Braunvieh,sbt_rbt, Vorderwaelder)
+cows_PKN %>% print(n=Inf) 
 
 cows_PKN<-cows_PKN %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
                               TM_scaling_factor=TM_kg_Tier_jahr/Kalkulation_milchleistung,
@@ -414,7 +482,7 @@ cows_PKN<-cows_PKN %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milc
                               P205_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
                               K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
                       
-cows_PKN <- cows_PKN %>% select(NUTS_2:Rasse, Produkt, FM_scaling_factor:K20_scaling_factor )
+cows_PKN <- cows_PKN %>% select(NUTS_2:Rasse, Produkt, N_scaling_factor:K20_scaling_factor )
 cows_PKN
 
 
@@ -426,7 +494,7 @@ cows_PKN<-cows_PKN %>% mutate(N_region_kgjahr=No_animals*N_scaling_factor*adjust
                     K20_region_kgjahr=No_animals*K20_scaling_factor*adjusted_avg_milk_production)
 
 
-cows_PKN %>% select(NUTS_2:performance_level,Produkt, N_region_kgjahr:K20_region_kgjahr)
+cows_PKN<-cows_PKN %>% select(NUTS_2:performance_level,Produkt, N_region_kgjahr:K20_region_kgjahr) 
 
 # NUTS_2 NPK regional estimate
 
@@ -437,6 +505,33 @@ if(laptob_work==TRUE) {
   write_xlsx(x=cows_PKN, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/cows_PKN.xlsx", col_names = TRUE)
   
 }  
+
+#####################################################################################################################################################################
+### Duengerabschaetzung fuer mutterkuhaltung
+mutterkuhhaltung<-mutterkuhhaltung %>% mutate(id=1)
+
+NPK_mutterkuh <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "7.6_Mutterkuhhaltung" )
+NPK_mutterkuh<-NPK_mutterkuh %>% select(`performance and feed_level`, `Einstreu kg FM/(Tier · d)`, Produkt, N_kg_Tier_jahr:K20_kg_Tier_jahr) %>% 
+                  filter(`performance and feed_level`=="Winterstall und Sommerweide 165 stalltage, 600kg, 270kg") %>%
+                  filter(`Einstreu kg FM/(Tier · d)`==4) %>% mutate(id=1)
+NPK_mutterkuh
+
+mutterkuhhaltung<-mutterkuhhaltung %>% select(NUTS_2, region, other_cows, id) %>% left_join(NPK_mutterkuh, by="id") %>% select(-id)
+
+mutterkuhhaltung<-mutterkuhhaltung %>% mutate(N_region_jahr=other_cows*N_kg_Tier_jahr,
+                            P205_region_Jahr=other_cows*P205_kg_Tier_jahr,
+                            K20_regio_jahr=other_cows*K20_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
+
+
+if(laptob_work==TRUE) {
+  write_xlsx(x=mutterkuhhaltung, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/mutterkuh_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=mutterkuhhaltung, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/mutterkuh.xlsx", col_names = TRUE)
+  
+}  
+
+
 
 
 ######################################################################################################################################################################
