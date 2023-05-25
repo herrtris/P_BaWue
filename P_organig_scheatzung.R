@@ -168,13 +168,18 @@ milchkuehe %>% print(n=Inf)
 # milchkuehe$other_cows<- as.numeric(milchkuehe$other_cows)
 # milchkuehe$cows<- as.numeric(milchkuehe$cows)
 
+#25.05. other cows sind mutterkuehe - diese werden gesondert betrachtet, aber mit den selben shares
 
 milchkuehe<-milchkuehe %>% mutate(all_cows=cows+other_cows) %>% select(NUTS_2, region, `Fleckvieh %`:all_cows)
 milchkuehe
 
+
+
 # wie weit bin ich von den 100% je kreis weg?
 milchkuehe<-milchkuehe %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check)
 milchkuehe
+milchkuehe %>% print(n=Inf)
+
 
 # easy approach: diff wird einfach proportional auf alle Rassen aufgeschlagen
 # Proportionales aufschlage der Prozentzahlen, sodass 100% entstehen
@@ -231,7 +236,7 @@ milchkuehe <- milchkuehe %>% rename(No_animals=value)
 milchkuehe
 milchkuehe %>% print(n=Inf)
 
-# Durchnittsdaten je Rasse für Bawue, kreisdurchschnitte sind nicht verfügbar
+# Durchnittsdaten je Rasse für Bawue, kreisdurchschnitte sind nicht verfügbar, DAten für 2021
 milchkuehe_2 <-milchkuehe %>% mutate(avg_milk_production_race=case_when(
     Race=='Fleckvieh'       ~ 7966,  #Annahme Durchschnitt
     Race=='Braunvieh'       ~ 7751,     #Annahme Durschnitt
