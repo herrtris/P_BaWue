@@ -1,4 +1,6 @@
 ### script zur Schätzung der Tierzahlen und dem Duengeranfall je Kreis ###
+rm(list=ls())
+
 
 library(dplyr)
 #install.packages("tidyr")
@@ -12,9 +14,17 @@ library(tidyverse)
 # Starting with cows that are producing milk
 # several elements are important to estimate the fertilizer amount per NUTS_2
 
+laptob_work <- FALSE
+
 # 1. The amount of organic fertilizer depends on the intensity of milk production (how many kg per year)
 
-setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+}
+
+
 avg_milk_production <- read_excel("Milchleistung_je_kreis.xlsx",sheet = "Durchschnittsleistung" )
 
 glimpse(avg_milk_production)
@@ -59,9 +69,12 @@ for (var in var_names) {
 race_proportion
 
 #3. The amount of cows in the region is relevant of course, how many cows per NUTS2 are there producing N, P, K
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+}
 
-
-setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
 No_animals <- read_excel("Tierzahlen_maerz_2020.xlsx",sheet = "Rinder_milchkuehe" )
 
 glimpse(No_animals)
@@ -172,6 +185,12 @@ milchkuehe<-milchkuehe %>% mutate(`Fleckvieh %`=`Fleckvieh %`+diff/4,
 
 milchkuehe %>% rowwise()%>%mutate(check=sum(`Fleckvieh %`,`Holsteins-Rbt`,`Holstein-sbt %`, `Braunvieh %`)) %>% mutate(diff=100-check)
 
+
+adjusted_race_proportions <- milchkuehe %>% select(NUTS_2:`Holsteins-Rbt`)
+adjusted_race_proportions %>% mutate(sum(`Braunvieh %`,`Fleckvieh %`, `Holstein-sbt %`,`Holsteins-Rbt`)) %>% print(n=Inf)
+
+
+
 milchkuehe<-milchkuehe %>% select(-c(diff, check, `Vorderwälder %`, `Hinterwälder %`))
 milchkuehe %>% print(n=Inf)
 
@@ -196,7 +215,14 @@ milchkuehe %>% print(n=Inf)
 
 # nach der Hochrechnung der Milchleistung über die Rasse, wie weit bin ich weg von von dem LKV average je kreis?
 #step2 avg_milchleistung nach Rasse gewichten, sodass der gesamt average per region jedoch gewahrt wird
-setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+  
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\LKV_Milchleistungspruefung")
+}
+
+
 avg_milk_race <- read_excel("Milchleistung_je_kreis.xlsx",sheet = "avg_leistung_rasse_2021" )
 
 avg_milk_race 
@@ -297,8 +323,12 @@ milchkuehe_2
 milchkuehe_2$adjusted_avg_milk_production<-round(milchkuehe_2$adjusted_avg_milk_production,digits = 0)
 
 
-write_xlsx(x=milchkuehe_2, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Tierzahlen_leistung_jekreis_milch.xlsx", col_names = TRUE)
-
+if(laptob_work==TRUE) {
+  write_xlsx(x=milchkuehe_2, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Tierzahlen_leistung_jekreis_milch.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=milchkuehe_2, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Tierzahlen_leistung_jekreis_milch.xlsx", col_names = TRUE)
+}  
 
 ###################################################################################################################################################################
 # step2 Estimating the amount of N, P, K per region based on the amount of cows per race
@@ -310,7 +340,13 @@ P_org_milch %>% print(n=Inf)
 # Hochrechnung von N, P, K based on KTBL
 # Laden der Mistproduktion auf Basis des performance levels
 
-setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\KTBL\\Wirtschaftsduengeranfall")
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\KTBL\\Wirtschaftsduengeranfall")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\KTBL\\Wirtschaftsduengeranfall")
+}
+
+
 performance_level <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "Milch_leistungsniveau" )
 performance_level
 
@@ -318,7 +354,7 @@ performance_level
 Fleckvieh<-P_org_milch %>% filter(Race=="Fleckvieh")
 sbt_rbt <- P_org_milch %>% filter(Race=="Holstein_sbt" | Race=="Holstein_rbt")
 Braunvieh <- P_org_milch %>% filter(Race=="Braunvieh")
-Braunvieh %>% print(n=Inf)
+
 
 
 
@@ -333,20 +369,26 @@ Fleckvieh<- Fleckvieh %>%
 
 sbt_rbt<- sbt_rbt %>%
           mutate(performance_level = case_when(
-            round(Sbt_Rbt$adjusted_avg_milk_production,-3) == 7000 ~ 1,
-            round(Sbt_Rbt$adjusted_avg_milk_production,-3) == 8000 ~ 2,
-            round(Sbt_Rbt$adjusted_avg_milk_production,-3) == 9000 ~ 2,
-            round(Sbt_Rbt$adjusted_avg_milk_production, -3) == 10000 ~ 3
+            round(sbt_rbt$adjusted_avg_milk_production,-3) == 7000 ~ 1,
+            round(sbt_rbt$adjusted_avg_milk_production,-3) == 8000 ~ 2,
+            round(sbt_rbt$adjusted_avg_milk_production,-3) == 9000 ~ 2,
+            round(sbt_rbt$adjusted_avg_milk_production, -3) == 10000 ~ 3
           ))
 
 
 
 Braunvieh<- Braunvieh %>%
             mutate(performance_level = case_when(
-              round(Fleckvieh$adjusted_avg_milk_production,-3) == 6000 ~ 1,
-              round(Fleckvieh$adjusted_avg_milk_production,-3) == 7000 ~ 2,
-              round(Fleckvieh$adjusted_avg_milk_production, -3) == 8000 ~ 3
+              round(Braunvieh$adjusted_avg_milk_production,-3) == 6000 ~ 1,
+              round(Braunvieh$adjusted_avg_milk_production,-3) == 7000 ~ 2,
+              round(Braunvieh$adjusted_avg_milk_production, -3) == 8000 ~ 3
             ))
+
+
+
+NUTS_2_milk_performance_level <- rbind(Fleckvieh, Braunvieh,sbt_rbt)
+
+
 
 ### joining data with the performance level
 Fleckvieh <-Fleckvieh %>%  left_join(performance_level%>% filter(Rasse=="Fleckvieh"), by="performance_level")
@@ -357,6 +399,8 @@ sbt_rbt   <- sbt_rbt %>% left_join(performance_level%>% filter(Rasse=="Sbt_HF"),
 ### Getting the scaling factors. Ich möchte die Düngermenge anpassen basierend auf die durchschnittliche Milchleistung je Kreis
 Fleckvieh
 #FM_kg_Tier_jahr,TM_kg_Tier_jahr,N_kg_Tier_jahr,P205_kg_Tier_jahr, K20_kg_Tier_jahr Kalkulation_milchleistung
+
+cows_PKN <- rbind(Fleckvieh,Braunvieh,sbt_rbt)
  
 
 cows_PKN<-cows_PKN %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
@@ -380,11 +424,20 @@ cows_PKN<-cows_PKN %>% mutate(N_region_kgjahr=No_animals*N_scaling_factor*adjust
 cows_PKN %>% select(NUTS_2:performance_level,Produkt, N_region_kgjahr:K20_region_kgjahr)
 
 # NUTS_2 NPK regional estimate
-write_xlsx(x=cows_PKN, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/cows_PKN.xlsx", col_names = TRUE)
+
+if(laptob_work==TRUE) {
+  write_xlsx(x=cows_PKN, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/cows_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=cows_PKN, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/cows_PKN.xlsx", col_names = TRUE)
+  
+}  
+
 
 ######################################################################################################################################################################
 
-
+################### Duengerabschaetzung fuer Kaelber
+###### Daten aus den Tierzahlen
 No_animals
 kaelber_U1 <- No_animals %>% select(NUTS_2=...2,region=...1,Kealber_U1_male=`Rinder Noch: davon`, Kaelber_U1_female=...12)
 kaelber_U1
@@ -413,6 +466,84 @@ Kaelber_Ue2$Kaelber_Ue2_female<- as.numeric(Kaelber_Ue2$Kaelber_Ue2_female)
 Kaelber_Ue2$Kealber_Ue2_male<- round(Kaelber_Ue2$Kealber_Ue2_male, digits = 0)
 Kaelber_Ue2$Kaelber_Ue2_female<- round(Kaelber_Ue2$Kaelber_Ue2_female, digits = 0)
 Kaelber_Ue2
+
+##########################################################################
+## Schaetzung Kaelberauzucht
+
+# diese über alle RAsse gerundete performance wird genutzt um die Kaelber zu schaetzen
+# moment mal.. habe ja auch bei den Kaelberndaten verschiedene Rassen, dass ist auch bei der Mast! sehr relevant!
+# Die selben shares wie vorher bei den Milchkuehen wird benutzt um die Kaelber auf verschiedene Rassen splitten 
+
+adjusted_race_proportions
+kaelber_U1 <- kaelber_U1 %>% rowwise()%>%mutate(total_kaelber=sum(Kaelber_U1_female, Kealber_U1_male))
+kaelber_U1<-kaelber_U1 %>% left_join(adjusted_race_proportions, by="NUTS_2")
+kaelber_U1<-kaelber_U1 %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*total_kaelber,
+                                  Braunvieh_kU1=`Braunvieh %`/100*total_kaelber,
+                                  sbt_ku1=`Holstein-sbt %`/100*total_kaelber,
+                                  rbt_ku1=`Holsteins-Rbt`/100*total_kaelber) %>% 
+                           select(NUTS_2, region=region.x, total_kaelber,Fleckvieh_kU1:rbt_ku1)
+            
+
+kaelber_U1$Fleckvieh_kU1<- round(kaelber_U1$Fleckvieh_kU1)
+kaelber_U1$Braunvieh_kU1 <- round(kaelber_U1$Braunvieh_kU1)
+kaelber_U1$sbt_ku1<- round(kaelber_U1$sbt_ku1)
+kaelber_U1$rbt_ku1<- round(kaelber_U1$rbt_ku1)
+
+kaelber_U1<-kaelber_U1 %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1)) %>% rename(Rasse="name", No_animals="value")
+kaelber_U1
+
+
+kaelber_U1F<-kaelber_U1%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
+                                                             select(NUTS_2, performance_level), by="NUTS_2")
+
+kaelber_U1B<-kaelber_U1%>% filter(Rasse=="Braunvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Braunvieh") %>%
+                                                                          select(NUTS_2, performance_level), by="NUTS_2")
+
+kaelber_U1sbt<-kaelber_U1%>% filter(Rasse=="sbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_sbt") %>%
+                                                                          select(NUTS_2, performance_level), by="NUTS_2")
+
+kaelber_U1rbt<-kaelber_U1%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_rbt") %>%
+                                                                          select(NUTS_2, performance_level), by="NUTS_2")
+
+
+#kaelber_U1<-rbind(kaelber_U1F, kaelber_U1B, kaelber_U1rbt, kaelber_U1sbt)
+
+
+performance_level_kaelber <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "Kaelberaufzucht" )
+performance_level_kaelber
+
+
+kaelber_U1F<-kaelber_U1F %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+kaelber_U1B<-kaelber_U1B %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+kaelber_U1sbt<-kaelber_U1sbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu, Rasse)), by="performance_level")
+kaelber_U1rbt<-kaelber_U1rbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+
+kaelber_U1 <-rbind(kaelber_U1F,kaelber_U1B, kaelber_U1rbt,kaelber_U1sbt)
+kaelber_U1
+
+
+kaelber_U1<-kaelber_U1 %>% mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
+                      P205_kg_year=No_animals*P205_kg_Tier_jahr,
+                      K20_kg_year=No_animals*K20_kg_Tier_jahr)
+
+kaelber_U1<-kaelber_U1 %>% select(NUTS_2:performance_level, N_kg_year:K20_kg_year)
+kaelber_U1
+
+# DONE schaetzung NPK je Rasse je kreis fuer Kaelber
+if(laptob_work==TRUE) {
+  write_xlsx(x=kaelber_U1, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kaelber_U1_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=kaelber_U1, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kaelber_U1_PKN.xlsx", col_names = TRUE)
+  
+}  
+
+
+
+
+
+
+#https://www.airmeet.com/e/4f6e7f80-df9b-11ed-8a4c-e342f8af2fa3
 
 
 
