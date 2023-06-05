@@ -670,7 +670,7 @@ Kaelber_Ue2
 jungrinder<-kaelber_U12 %>% left_join(Kaelber_Ue2%>% select(-c(region)), by="NUTS_2")
 
 jungrinder_female <- jungrinder %>% select(NUTS_2, region, Kaelber_U12_female, Kaelber_Ue2_female)
-jungrinder_male <- jungrinder%>% select(NUTS_2, region, Kealber_U12_male,Kealber_Ue2_male)
+
 
 
 ## Rough Schaetzung female rinder
@@ -756,6 +756,103 @@ if(laptob_work==TRUE) {
 
 ######################################################################################################################################################################################################
 # Estimate for Jungrinder male - Rindermast
+
+jungrinder_male <- jungrinder%>% select(NUTS_2, region, Kealber_U12_male,Kealber_Ue2_male)
+jungrinder_male
+
+jungrinder_male<-jungrinder_male %>% mutate(jungrinder_male_total = Kealber_U12_male+Kealber_Ue2_male)
+jungrinder_male
+
+# same procedure as with Kaelber, ausplitten nach RAssen und performance_level
+jungrinder_male<-jungrinder_male %>% left_join(adjusted_race_proportions%>% select(-c(cows, other_cows, Region, region)), by="NUTS_2")
+
+
+jungrinder_male<-jungrinder_male %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*jungrinder_male_total,
+                                                Braunvieh_kU1=`Braunvieh %`/100*jungrinder_male_total,
+                                                sbt_ku1=`Holstein-sbt %`/100*jungrinder_male_total,
+                                                rbt_ku1=`Holsteins-Rbt`/100*jungrinder_male_total,
+                                                voerder_ku1=`Vorderwälder %`/100*jungrinder_male_total) 
+
+jungrinder_male<-jungrinder_male %>% select(NUTS_2, region, jungrinder_male_total, Fleckvieh_kU1:voerder_ku1)
+
+
+# rounding of No. animals
+
+jungrinder_male$Fleckvieh_kU1<- round(jungrinder_male$Fleckvieh_kU1)
+jungrinder_male$Braunvieh_kU1 <- round(jungrinder_male$Braunvieh_kU1)
+jungrinder_male$sbt_ku1<- round(jungrinder_male$sbt_ku1)
+jungrinder_male$rbt_ku1<- round(jungrinder_male$rbt_ku1)
+jungrinder_male$voerder_ku1<- round(jungrinder_male$voerder_ku1)
+
+jungrinder_male<-jungrinder_male %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
+jungrinder_male
+
+
+# getting the performance levels from milk production per area
+jungrinder_F<-jungrinder_male%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
+                                                                                  select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_B<-jungrinder_male%>% filter(Rasse=="Braunvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Braunvieh") %>%
+                                                                                  select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_sbt<-jungrinder_male%>% filter(Rasse=="sbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_sbt") %>%
+                                                                              select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_rbt<-jungrinder_male%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_rbt") %>%
+                                                                              select(NUTS_2, performance_level), by="NUTS_2")
+
+
+jungrinder_voer<-jungrinder_male%>% filter(Rasse=="voerder_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Vorderwaeldert") %>%
+                                                                                   select(NUTS_2, performance_level), by="NUTS_2")
+
+
+
+# performance levels from KTBL data
+performance_level_rindermast <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "6.6_Rindermast" )
+performance_level_rindermast
+
+# filter for Einstreu == 1; two is also a option
+# I can choose the amount of straw used on average, here for consistency I use 1 kg FM per day and animal
+performance_level_rindermast<-performance_level_rindermast %>% filter(Einstreu==1)
+
+jungrinder_F<-jungrinder_F %>% left_join(performance_level_rindermast%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_B<-jungrinder_B %>% left_join(performance_level_rindermast%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_sbt<-jungrinder_sbt %>% left_join(performance_level_rindermast%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu, Rasse)), by="performance_level")
+jungrinder_rbt<-jungrinder_rbt %>% left_join(performance_level_rindermast%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_voer<-jungrinder_voer %>% left_join(performance_level_rindermast%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+
+
+
+jungrinder_mast <-rbind(jungrinder_F,jungrinder_B, jungrinder_sbt,jungrinder_rbt,jungrinder_voer)
+jungrinder_mast
+
+
+jungrinder_mast<-jungrinder_mast %>% mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
+                                                P205_kg_year=No_animals*P205_kg_Tier_jahr,
+                                                K20_kg_year=No_animals*K20_kg_Tier_jahr)
+
+jungrinder_mast<-jungrinder_mast %>% select(NUTS_2:performance_level,Produkt, N_kg_year:K20_kg_year)
+jungrinder_mast
+
+# DONE schaetzung NPK je Rasse je kreis fuer jungrinder female
+if(laptob_work==TRUE) {
+  write_xlsx(x=jungrinder_mast, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_mast_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=jungrinder_mast, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_mast_PKN.xlsx", col_names = TRUE)
+  
+}  
+
+
+########################################################################################################################################################################################
+# remove all datasets except the following ones
+jungrinder_mast
+jungrinder_female
+kaelber_U1
+mutterkuhhaltung
+cows_PKN
+No_animals
+
 
 
 
