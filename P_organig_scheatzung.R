@@ -14,7 +14,7 @@ library(tidyverse)
 # Starting with cows that are producing milk
 # several elements are important to estimate the fertilizer amount per NUTS_2
 
-laptob_work <- FALSE
+laptob_work <- TRUE
 
 # 1. The amount of organic fertilizer depends on the intensity of milk production (how many kg per year)
 
@@ -537,18 +537,21 @@ if(laptob_work==TRUE) {
 ######################################################################################################################################################################
 
 ################### Duengerabschaetzung fuer Kaelber
-###### Daten aus den Tierzahlen
+###### Einlesen Daten aus den Tierzahlen fuer Kaelber und junrinder unter 1 Jahr, 1 bis 2 Jahre alte Tiere, 2 Jahre und aeltere Tiere in all cases male and female animals
+
+##Kaelber und Jungrinder bis unter 1 Jahre alt
 No_animals
 kaelber_U1 <- No_animals %>% select(NUTS_2=...2,region=...1,Kealber_U1_male=`Rinder Noch: davon`, Kaelber_U1_female=...12)
 kaelber_U1
 kaelber_U1<-kaelber_U1[-c(1:2),]
+kaelber_U1
 kaelber_U1$Kealber_U1_male <- as.numeric(kaelber_U1$Kealber_U1_male)
 kaelber_U1$Kaelber_U1_female<- as.numeric(kaelber_U1$Kaelber_U1_female)
 kaelber_U1$Kealber_U1_male<- round(kaelber_U1$Kealber_U1_male, digits = 0)
 kaelber_U1$Kaelber_U1_female<- round(kaelber_U1$Kaelber_U1_female, digits = 0)
 
 
-
+# Rinder 1 bis unter 2 Jahre alte Tiere
 kaelber_U12 <- No_animals %>% select(NUTS_2=...2,region=...1,Kealber_U12_male=...13, Kaelber_U12_female=...14)
 kaelber_U12<-kaelber_U12[-c(1:2),]
 kaelber_U12
@@ -557,7 +560,7 @@ kaelber_U12$Kaelber_U12_female<- as.numeric(kaelber_U12$Kaelber_U12_female)
 kaelber_U12$Kealber_U12_male<- round(kaelber_U12$Kealber_U12_male, digits = 0)
 kaelber_U12$Kaelber_U12_female<- round(kaelber_U12$Kaelber_U12_female, digits = 0)
 
-
+# Jungrinder 2 Jahre und aeltere Tiere
 Kaelber_Ue2 <- No_animals %>% select(NUTS_2=...2,region=...1,Kealber_Ue2_male=...15, Kaelber_Ue2_female=...16)
 Kaelber_Ue2<-Kaelber_Ue2[-c(1:2),]
 Kaelber_Ue2
@@ -574,25 +577,32 @@ Kaelber_Ue2
 # moment mal.. habe ja auch bei den Kaelberndaten verschiedene Rassen, dass ist auch bei der Mast! sehr relevant!
 # Die selben shares wie vorher bei den Milchkuehen wird benutzt um die Kaelber auf verschiedene Rassen splitten 
 
-adjusted_race_proportions
+adjusted_race_proportions %>% print(n=Inf)
 kaelber_U1 <- kaelber_U1 %>% rowwise()%>%mutate(total_kaelber=sum(Kaelber_U1_female, Kealber_U1_male))
 kaelber_U1<-kaelber_U1 %>% left_join(adjusted_race_proportions, by="NUTS_2")
+
+
 kaelber_U1<-kaelber_U1 %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*total_kaelber,
                                   Braunvieh_kU1=`Braunvieh %`/100*total_kaelber,
                                   sbt_ku1=`Holstein-sbt %`/100*total_kaelber,
-                                  rbt_ku1=`Holsteins-Rbt`/100*total_kaelber) %>% 
-                           select(NUTS_2, region=region.x, total_kaelber,Fleckvieh_kU1:rbt_ku1)
+                                  rbt_ku1=`Holsteins-Rbt`/100*total_kaelber,
+                                  voerder_ku1=`Vorderwälder %`/100*total_kaelber) %>% 
+                           select(NUTS_2, region=region.x, total_kaelber,Fleckvieh_kU1:voerder_ku1)
             
 
 kaelber_U1$Fleckvieh_kU1<- round(kaelber_U1$Fleckvieh_kU1)
 kaelber_U1$Braunvieh_kU1 <- round(kaelber_U1$Braunvieh_kU1)
 kaelber_U1$sbt_ku1<- round(kaelber_U1$sbt_ku1)
 kaelber_U1$rbt_ku1<- round(kaelber_U1$rbt_ku1)
+kaelber_U1$voerder_ku1<- round(kaelber_U1$voerder_ku1)
 
-kaelber_U1<-kaelber_U1 %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1)) %>% rename(Rasse="name", No_animals="value")
+
+
+kaelber_U1<-kaelber_U1 %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
 kaelber_U1
 
 
+# getting the performance levels from milk production per area
 kaelber_U1F<-kaelber_U1%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
                                                              select(NUTS_2, performance_level), by="NUTS_2")
 
@@ -606,10 +616,14 @@ kaelber_U1rbt<-kaelber_U1%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_
                                                                           select(NUTS_2, performance_level), by="NUTS_2")
 
 
+kaelber_U1voer<-kaelber_U1%>% filter(Rasse=="voerder_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Vorderwaeldert") %>%
+                                                                      select(NUTS_2, performance_level), by="NUTS_2")
+
+
 #kaelber_U1<-rbind(kaelber_U1F, kaelber_U1B, kaelber_U1rbt, kaelber_U1sbt)
 
-
-performance_level_kaelber <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "Kaelberaufzucht" )
+# performance level beziehen sich auf den Zuwachs Fleckvieh 90, 95, 100kg Zuwachs; SBT_HF 80, 85, 90 kg Zuwachs
+performance_level_kaelber <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "4.6_Kaelberaufzucht" )
 performance_level_kaelber
 
 
@@ -617,8 +631,11 @@ kaelber_U1F<-kaelber_U1F %>% left_join(performance_level_kaelber%>% filter(Rasse
 kaelber_U1B<-kaelber_U1B %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
 kaelber_U1sbt<-kaelber_U1sbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu, Rasse)), by="performance_level")
 kaelber_U1rbt<-kaelber_U1rbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+kaelber_U1voer<-kaelber_U1voer %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
 
-kaelber_U1 <-rbind(kaelber_U1F,kaelber_U1B, kaelber_U1rbt,kaelber_U1sbt)
+
+
+kaelber_U1 <-rbind(kaelber_U1F,kaelber_U1B, kaelber_U1rbt,kaelber_U1sbt,kaelber_U1voer)
 kaelber_U1
 
 
@@ -638,6 +655,107 @@ if(laptob_work==TRUE) {
   
 }  
 
+#########################################################################################################################################################################################
+
+# Rinder 1 bis unter 2 Jahre alte Tiere
+kaelber_U12 
+Kaelber_Ue2
+# KTBL DAten: weibliche Kaelber zwischen 1 und 2 Jahren werden als Jungrinder unter KTBL betrachtet
+# Hier gibt es 3 Zuwachsraten für Fleckvieh und Schwarzbunt. D.h. fuer diese Altersklasse kann dasselbe Vorgehen angewendet werden wie auf Kaelber
+# Daten nach RAssen splitten, Kreisperformance levels holen und dann das hochrechnen um den organischen NPK zu bekommen - allerdings nur fuer die weiblichen Jungrinder, die maenlichen gehen in die Mast
+
+# Maenliche Rinder in der Mast: 
+
+# Jungrinder male female getrennt betrachten
+jungrinder<-kaelber_U12 %>% left_join(Kaelber_Ue2%>% select(-c(region)), by="NUTS_2")
+
+jungrinder_female <- jungrinder %>% select(NUTS_2, region, Kaelber_U12_female, Kaelber_Ue2_female)
+jungrinder_male <- jungrinder%>% select(NUTS_2, region, Kealber_U12_male,Kealber_Ue2_male)
+
+
+## Rough Schaetzung female rinder
+jungrinder_female<-jungrinder_female %>% mutate(jungrinder_female_total = Kaelber_U12_female+Kaelber_Ue2_female)
+jungrinder_female
+
+# same procedure as with Kaelber, ausplitten nach RAssen und performance_level
+jungrinder_female<-jungrinder_female %>% left_join(adjusted_race_proportions%>% select(-c(cows, other_cows, Region, region)), by="NUTS_2")
+
+
+jungrinder_female<-jungrinder_female %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*jungrinder_female_total,
+                                  Braunvieh_kU1=`Braunvieh %`/100*jungrinder_female_total,
+                                  sbt_ku1=`Holstein-sbt %`/100*jungrinder_female_total,
+                                  rbt_ku1=`Holsteins-Rbt`/100*jungrinder_female_total,
+                                  voerder_ku1=`Vorderwälder %`/100*jungrinder_female_total) 
+
+jungrinder_female<-jungrinder_female %>% select(NUTS_2, region, jungrinder_female_total, Fleckvieh_kU1:voerder_ku1)
+
+
+# rounding of No. animals
+
+jungrinder_female$Fleckvieh_kU1<- round(jungrinder_female$Fleckvieh_kU1)
+jungrinder_female$Braunvieh_kU1 <- round(jungrinder_female$Braunvieh_kU1)
+jungrinder_female$sbt_ku1<- round(jungrinder_female$sbt_ku1)
+jungrinder_female$rbt_ku1<- round(jungrinder_female$rbt_ku1)
+jungrinder_female$voerder_ku1<- round(jungrinder_female$voerder_ku1)
+
+jungrinder_female<-jungrinder_female %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
+jungrinder_female
+
+# getting the performance levels from milk production per area
+jungrinder_F<-jungrinder_female%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
+                                                                          select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_B<-jungrinder_female%>% filter(Rasse=="Braunvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Braunvieh") %>%
+                                                                          select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_sbt<-jungrinder_female%>% filter(Rasse=="sbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_sbt") %>%
+                                                                      select(NUTS_2, performance_level), by="NUTS_2")
+
+jungrinder_rbt<-jungrinder_female%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_rbt") %>%
+                                                                      select(NUTS_2, performance_level), by="NUTS_2")
+
+
+jungrinder_voer<-jungrinder_female%>% filter(Rasse=="voerder_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Vorderwaeldert") %>%
+                                                                           select(NUTS_2, performance_level), by="NUTS_2")
+
+# performance levels from KTBL data
+performance_level_jungrinder <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "5.6_Jungrinder" )
+performance_level_jungrinder
+
+# I can choose the amount of straw used on average, here for consistency I use 3 kg FM per day and animal
+performance_level_jungrinder<-performance_level_jungrinder %>% filter(Einstreu==3)
+
+jungrinder_F<-jungrinder_F %>% left_join(performance_level_jungrinder%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_B<-jungrinder_B %>% left_join(performance_level_jungrinder%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_sbt<-jungrinder_sbt %>% left_join(performance_level_jungrinder%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu, Rasse)), by="performance_level")
+jungrinder_rbt<-jungrinder_rbt %>% left_join(performance_level_jungrinder%>% filter(Rasse=="Sbt_HF") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+jungrinder_voer<-jungrinder_voer %>% left_join(performance_level_jungrinder%>% filter(Rasse=="Fleckvieh") %>% select(-c(Einstreu,Rasse)), by="performance_level")
+
+
+
+jungrinder_female <-rbind(jungrinder_F,jungrinder_B, jungrinder_sbt,jungrinder_rbt,jungrinder_voer)
+jungrinder_female
+
+
+jungrinder_female<-jungrinder_female %>% mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
+                                  P205_kg_year=No_animals*P205_kg_Tier_jahr,
+                                  K20_kg_year=No_animals*K20_kg_Tier_jahr)
+
+jungrinder_female<-jungrinder_female %>% select(NUTS_2:performance_level,Produkt, N_kg_year:K20_kg_year)
+jungrinder_female
+
+# DONE schaetzung NPK je Rasse je kreis fuer jungrinder female
+if(laptob_work==TRUE) {
+  write_xlsx(x=jungrinder_female, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_female_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=jungrinder_female, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_female_PKN.xlsx", col_names = TRUE)
+  
+}  
+
+
+######################################################################################################################################################################################################
+# Estimate for Jungrinder male - Rindermast
 
 
 
