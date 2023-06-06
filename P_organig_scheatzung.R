@@ -897,10 +897,71 @@ pigs_freiburg <- No_animals_schweine %>% filter(RP=="Freiburg")
 pigs_stuttgart
 
 # filter for regions having pigs
-pigs_stuttgart %>% filter(total_pigs>0)
+pigs_stuttgart<-pigs_stuttgart %>% filter(total_pigs>0) %>% pivot_longer(cols = c(total_pigs, Ferkel, Zuchtsauen, `andere Schweine`), names_to = "pigs") %>% rename(No.="value")
+print(pigs_stuttgart, n=Inf)
+
+
+pigs_stuttgart_check<- pigs_stuttgart %>% filter(NUTS_2=="NA")
+pigs_stuttgart_check
+
+pigs_stuttgart<- pigs_stuttgart %>% filter(!NUTS_2=="NA")
+pigs_stuttgart %>% filter(!pigs=="total_pigs")
+pigs_stuttgart %>% group_by(NUTS_2) %>% count() ## in total there are 10 counties with pigs in RP Stuttgart
+
+
+pigs_stuttgart_check %>% filter(!region=="RP Stuttgart") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./10)
+
+
+pigs_stuttgart<-pigs_stuttgart %>% filter(!pigs=="total_pigs") %>% 
+      left_join(
+      pigs_stuttgart_check %>% filter(!region=="RP Stuttgart") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./10) %>% select(-c(region, NUTS_2, RP, No.)), by="pigs")
+
+pigs_stuttgart<-pigs_stuttgart %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
 
 
 
+pigs_stuttgart$adj_No.<- round(pigs_stuttgart$adj_No.,digits = 0)
+pigs_stuttgart
+
+# does it now match the total amount of pigs in BaWue after rounding? In total there are 915,009 pigs in Bawue
+pigs_stuttgart_check
+
+pigs_stuttgart %>%ungroup() %>% summarize(No.Pigs_stuttgart=sum(adj_No.)) # after linearly upscaling across all NUTS with pigs there 2 pigs more due to rounding 
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+pigs_stuttgart<-pigs_stuttgart %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+pigs_stuttgart %>% print(n=Inf)
+
+#####################
+# Getting KTBL NPK per region 
+
+
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\KTBL\\Wirtschaftsduengeranfall")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\KTBL\\Wirtschaftsduengeranfall")
+}
+
+
+# performance levels from KTBL data
+performance_level_schwein <- read_excel("schweinemast_ktbl.xlsx",sheet = "10.6_Schweinemast", skip=2 )
+performance_level_schwein
+
+performance_level_schwein<-performance_level_schwein %>% filter(`Einstreu kg FM/(TP · d)`=="0.3") %>% slice_head(n=3)
+performance_level_schwein %>% mutate(pigs="andere Schweine")
+
+## Estimating Mastschweine
+mast_stuttgart <- pigs_stuttgart %>% filter(pigs=="andere Schweine") %>% select(region, NUTS_2, pigs, adj_No.) %>% 
+                   left_join(performance_level_schwein %>% mutate(pigs="andere Schweine", Futter="Standardfutter") %>%select(pigs, Futter, Einstreu=`Einstreu kg FM/(TP · d)`, 
+                                                                                                                             Produkt=Wirtshaftsdüngerart, N,P2O5, K2O), 
+                             by="pigs")
+
+mast_stuttgart<-mast_stuttgart %>% mutate(N_kg_year=adj_No.*N,
+                          P2O5_kg_year=adj_No.*P2O5,
+                          K2O_kg_year=adj_No.*K2O)
 
 
 
