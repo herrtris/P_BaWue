@@ -890,7 +890,7 @@ No_animals_schweine<-replace_na(No_animals_schweine, list(total_pigs = 0,
 #scaling so that RP values are matched
 pigs_stuttgart <- No_animals_schweine %>% filter(RP=="Stuttgart")
 pigs_karlsruhe <- No_animals_schweine %>% filter(RP=="Karlsruhe")
-pigs_tuebingen <- No_animals_schweine %>% filter(RP=="Tübingen")
+pigs_tuebingen <- No_animals_schweine %>% filter(RP=="Tuebingen")
 pigs_freiburg <- No_animals_schweine %>% filter(RP=="Freiburg")
 
 # starting with Stuttgart
@@ -923,7 +923,7 @@ pigs_stuttgart<-pigs_stuttgart %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
 pigs_stuttgart$adj_No.<- round(pigs_stuttgart$adj_No.,digits = 0)
 pigs_stuttgart
 
-# does it now match the total amount of pigs in BaWue after rounding? In total there are 915,009 pigs in Bawue
+# does it now match the total amount of pigs in BaWue Stuttgart after rounding? In total there are 915,009 pigs in Bawue stuttgart
 pigs_stuttgart_check
 
 pigs_stuttgart %>%ungroup() %>% summarize(No.Pigs_stuttgart=sum(adj_No.)) # after linearly upscaling across all NUTS with pigs there 2 pigs more due to rounding 
@@ -935,7 +935,157 @@ pigs_stuttgart %>%ungroup() %>% summarize(No.Pigs_stuttgart=sum(adj_No.)) # afte
 pigs_stuttgart<-pigs_stuttgart %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
 pigs_stuttgart %>% print(n=Inf)
 
-#####################
+
+######################################################################################################################################################################
+# second Karlsruhe
+pigs_karlsruhe
+
+pigs_karlsruhe<-pigs_karlsruhe %>% filter(total_pigs>0) %>% pivot_longer(cols = c(total_pigs, Ferkel, Zuchtsauen, `andere Schweine`), names_to = "pigs") %>% rename(No.="value")
+print(pigs_karlsruhe, n=Inf)
+
+
+pigs_karlsruhe_check<- pigs_karlsruhe %>% filter(NUTS_2=="NA")
+pigs_karlsruhe_check
+
+pigs_karlsruhe<- pigs_karlsruhe %>% filter(!NUTS_2=="NA")
+pigs_karlsruhe %>% filter(!pigs=="total_pigs")
+pigs_karlsruhe %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with pigs in RP Karlsruhe
+
+
+pigs_karlsruhe_check %>% filter(!region=="RP Karlsruhe") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./7)
+
+
+pigs_karlsruhe<-pigs_karlsruhe %>% filter(!pigs=="total_pigs") %>% 
+  left_join(
+    pigs_karlsruhe_check %>% filter(!region=="RP Karlsruhe") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./7) %>% select(-c(region, NUTS_2, RP, No.)), by="pigs")
+
+pigs_karlsruhe<-pigs_karlsruhe %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+
+pigs_karlsruhe$adj_No.<- round(pigs_karlsruhe$adj_No.,digits = 0)
+pigs_karlsruhe
+
+# does it now match the total amount of pigs in BaWue Karlsruhe after rounding? In total there are 68,743 pigs in Bawue Karlsruhe
+pigs_karlsruhe_check
+
+pigs_karlsruhe %>%ungroup() %>% summarize(No.pigs_karlsruhe=sum(adj_No.)) # after linearly upscaling across all NUTS with pigs there 2 pigs more due to rounding 
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+pigs_karlsruhe<-pigs_karlsruhe %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+pigs_karlsruhe %>% print(n=Inf)
+
+###############################################################################################################################################################################################
+### Third freiburg
+pigs_freiburg
+
+pigs_freiburg<-pigs_freiburg %>% filter(total_pigs>0) %>% pivot_longer(cols = c(total_pigs, Ferkel, Zuchtsauen, `andere Schweine`), names_to = "pigs") %>% rename(No.="value")
+print(pigs_freiburg, n=Inf)
+
+
+pigs_freiburg_check<- pigs_freiburg %>% filter(NUTS_2=="NA")
+pigs_freiburg_check
+
+pigs_freiburg<- pigs_freiburg %>% filter(!NUTS_2=="NA")
+pigs_freiburg %>% filter(!pigs=="total_pigs")
+pigs_freiburg %>% group_by(NUTS_2) %>% count() ## in total there are 8 counties with pigs in RP Freiburg
+
+
+pigs_freiburg_check %>% filter(!region=="RP Freiburg") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./8)
+
+
+pigs_freiburg<-pigs_freiburg %>% filter(!pigs=="total_pigs") %>% 
+  left_join(
+    pigs_freiburg_check %>% filter(!region=="RP Freiburg") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./8) %>% select(-c(region, NUTS_2, RP, No.)), by="pigs")
+
+pigs_freiburg<-pigs_freiburg %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+
+pigs_freiburg$adj_No.<- round(pigs_freiburg$adj_No.,digits = 0)
+pigs_freiburg
+
+# does it now match the total amount of pigs in BaWue Freiburg after rounding? In total there are 103,557 pigs in Bawue Freiburg
+pigs_freiburg_check
+
+pigs_freiburg %>%ungroup() %>% summarize(No.pigs_freiburg=sum(adj_No.)) # after linearly upscaling across all NUTS with pigs there are 103,565 pigs  due to rounding 
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+pigs_freiburg<-pigs_freiburg %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+pigs_freiburg %>% print(n=Inf)
+
+
+#################################################################################################################################################
+# Fourth pigs tuebingen
+
+pigs_tuebingen <- No_animals_schweine %>% filter(RP=="Tuebingen")
+pigs_tuebingen
+
+pigs_tuebingen<-pigs_tuebingen %>% filter(total_pigs>0) %>% pivot_longer(cols = c(total_pigs, Ferkel, Zuchtsauen, `andere Schweine`), names_to = "pigs") %>% rename(No.="value")
+print(pigs_tuebingen, n=Inf)
+
+
+pigs_tuebingen_check<- pigs_tuebingen %>% filter(NUTS_2=="NA")
+pigs_tuebingen_check
+
+pigs_tuebingen<- pigs_tuebingen %>% filter(!NUTS_2=="NA")
+pigs_tuebingen<-pigs_tuebingen %>% filter(!pigs=="total_pigs")
+pigs_tuebingen %>% group_by(NUTS_2) %>% count() ## in total there are 9 counties with pigs in RP Tuebingen
+
+
+pigs_tuebingen_check %>% filter(!region=="RP Tuebingen") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./9)
+
+# no adjustement needed for tuebingen, the data is matching already
+# pigs_tuebingen<-pigs_tuebingen %>% filter(!pigs=="total_pigs") %>% 
+#   left_join(
+#     pigs_tuebingen_check %>% filter(!region=="RP Tuebingen") %>%filter(!pigs=="total_pigs")%>% mutate(lin_adjust=No./7) %>% select(-c(region, NUTS_2, RP, No.)), by="pigs")
+# 
+# pigs_tuebingen<-pigs_tuebingen %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+
+# pigs_tuebingen$adj_No.<- round(pigs_tuebingen$adj_No.,digits = 0)
+# pigs_tuebingen
+
+# does it now match the total amount of pigs in BaWue Karlsruhe after rounding? In total there are 68,743 pigs in Bawue Karlsruhe
+# pigs_tuebingen_check
+# 
+# pigs_tuebingen %>%ungroup() %>% summarize(No.pigs_tuebingen=sum(No.)) # after linearly upscaling across all NUTS with pigs there 2 pigs more due to rounding 
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+# pigs_tuebingen<-pigs_tuebingen %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+# pigs_tuebingen %>% print(n=Inf)
+
+pigs_tuebingen %>% summarize(sum(No.))
+
+###########################################################################################################################################
+pigs_tuebingen
+pigs_freiburg
+pigs_stuttgart
+pigs_karlsruhe
+
+# bringing the data togehter
+pigs_bawue<-rbind(pigs_stuttgart, pigs_karlsruhe, pigs_freiburg)
+pigs_bawue<-pigs_bawue %>% mutate(adjusted_No.=TRUE)
+
+head(pigs_tuebingen)
+pigs_tuebingen<-pigs_tuebingen %>% mutate(lin_adjust=0, adj_No.=No., percent_increase=0, adjusted_No.=FALSE)
+
+pigs_bawue<-rbind(pigs_bawue, pigs_tuebingen)
+pigs_bawue<-pigs_bawue %>%as_tibble()
+
+
+
+############################################################################################################################################
 # Getting KTBL NPK per region 
 
 
@@ -954,16 +1104,17 @@ performance_level_schwein<-performance_level_schwein %>% filter(`Einstreu kg FM/
 performance_level_schwein %>% mutate(pigs="andere Schweine")
 
 ## Estimating Mastschweine
-mast_stuttgart <- pigs_stuttgart %>% filter(pigs=="andere Schweine") %>% select(region, NUTS_2, pigs, adj_No.) %>% 
+mast_bawue <- pigs_bawue %>% filter(pigs=="andere Schweine") %>% select(region, NUTS_2, pigs, adj_No., adjusted_No.) %>% 
                    left_join(performance_level_schwein %>% mutate(pigs="andere Schweine", Futter="Standardfutter") %>%select(pigs, Futter, Einstreu=`Einstreu kg FM/(TP · d)`, 
                                                                                                                              Produkt=Wirtshaftsdüngerart, N,P2O5, K2O), 
                              by="pigs")
 
-mast_stuttgart<-mast_stuttgart %>% mutate(N_kg_year=adj_No.*N,
+mast_bawue<-mast_bawue %>% mutate(N_kg_year=adj_No.*N,
                           P2O5_kg_year=adj_No.*P2O5,
                           K2O_kg_year=adj_No.*K2O)
 
 
+mast_bawue
 
 
 #https://www.airmeet.com/e/4f6e7f80-df9b-11ed-8a4c-e342f8af2fa3
