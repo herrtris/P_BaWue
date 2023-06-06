@@ -853,6 +853,53 @@ mutterkuhhaltung
 cows_PKN
 No_animals
 
+####################################################################################################################################################################################
+
+rm(list=ls())
+
+rm(list = ls()[!ls() %in% c("jungrinder_mast", "jungrinder_female", "kaelber_U1","mutterkuhhaltung", "cows_PKN")])
+
+##################################################################################################################################################################################################
+
+# Next up: Schweinehaltung
+
+#3. The amount of cows in the region is relevant of course, how many cows per NUTS2 are there producing N, P, K
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+}
+
+No_animals_schweine <- read_excel("Tierzahlen_maerz_2020.xlsx",sheet = "Schweinehaltung_schaetzung", skip = 2 )
+No_animals_schweine
+
+No_animals_schweine<-No_animals_schweine %>% rename(region="...1", total_pig_owners="insgesamt...4", total_pigs="insgesamt...7")
+No_animals_schweine <- No_animals_schweine %>% select(region, NUTS_2, RP, total_pigs, Ferkel:`andere Schweine`)
+No_animals_schweine
+
+#making all NA's into zeroes
+No_animals_schweine<-replace_na(No_animals_schweine, list(total_pigs = 0,
+                                     Ferkel=0,
+                                     Zuchtsauen=0,
+                                    `andere Schweine`=0))
+
+# 1.step filling the blanks by using the RP averages weighted for the region
+# 1.1 if this results in negative values for estimated animals set to zero and substract from other estimated category
+# step 2. use scaling on all that have pigs so that the amount of animals per RP is matched, and the dat is matching overall
+
+#scaling so that RP values are matched
+pigs_stuttgart <- No_animals_schweine %>% filter(RP=="Stuttgart")
+pigs_karlsruhe <- No_animals_schweine %>% filter(RP=="Karlsruhe")
+pigs_tuebingen <- No_animals_schweine %>% filter(RP=="Tübingen")
+pigs_freiburg <- No_animals_schweine %>% filter(RP=="Freiburg")
+
+# starting with Stuttgart
+pigs_stuttgart
+
+# filter for regions having pigs
+pigs_stuttgart %>% filter(total_pigs>0)
+
+
 
 
 
