@@ -863,6 +863,8 @@ rm(list = ls()[!ls() %in% c("jungrinder_mast", "jungrinder_female", "kaelber_U1"
 
 # Next up: Schweinehaltung
 
+laptob_work<-TRUE
+
 #3. The amount of cows in the region is relevant of course, how many cows per NUTS2 are there producing N, P, K
 if(laptob_work==TRUE) {
   setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
@@ -1115,6 +1117,102 @@ mast_bawue<-mast_bawue %>% mutate(N_kg_year=adj_No.*N,
 
 
 mast_bawue
+
+
+# DONE schaetzung NPK for schweinemast
+if(laptob_work==TRUE) {
+  write_xlsx(x=mast_bawue, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/mast_schweine_bawue_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=mast_bawue, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/mast_schweine_bawue_PKN.xlsx", col_names = TRUE)
+  
+}  
+
+
+###################################################################################################################################################################
+# Getting started with Ferkelaufzucht
+performance_level_ferkelaufzucht <- read_excel("fertillizer_sang.xlsx",sheet = "9.6_Ferkelaufzucht", skip=2 )
+performance_level_ferkelaufzucht
+
+# KTBL data is for 8kg Lebendmasse, daher wird das gewaehlt, Standardfutter
+
+performance_level_ferkelaufzucht_choice <- performance_level_ferkelaufzucht %>% mutate(pigs="Ferkel") %>% filter(`Leistung und Futergrundlage`=="143kg Zuwachs je Tierplatz und Jahr,Standardfutter")
+performance_level_ferkelaufzucht_choice<-performance_level_ferkelaufzucht_choice %>% filter(`Einstreu kg FM/(TP · d)`== "0.1" | `Einstreu kg FM/(TP · d)`== "0.10")
+
+ferkel<-pigs_bawue %>% filter(pigs=="Ferkel")
+ferkel
+
+## Estimate NPK for Ferkel in BaWue 2020
+ferkel<- ferkel %>% left_join(performance_level_ferkelaufzucht_choice %>% select(`Einstreu kg FM/(TP · d)`:pigs), by="pigs") 
+
+ferkel$N <- as.numeric(ferkel$N)
+ferkel$P2O5 <- as.numeric(ferkel$P2O5)
+ferkel$K2O <- as.numeric(ferkel$K2O)
+
+ferkel_NPK<-ferkel %>% select(region:pigs, adj_No.:adjusted_No., Produkt, N:K2O) %>% mutate(N_kg_year=adj_No.*N,
+                                                                                P2O5_kg_year=adj_No.*P2O5,
+                                                                                K2O_kg_year=adj_No.*K2O)
+
+# DONE schaetzung NPK for ferkeleraufzucht
+if(laptob_work==TRUE) {
+  write_xlsx(x=ferkel_NPK, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/ferkel_NPK.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=ferkel_NPK, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/ferkel_NPK.xlsx", col_names = TRUE)
+  
+}  
+
+#####################################################################################################################################################################################################
+## continue with Ferkelerzeugung
+
+performance_level_ferkelerzeugung <- read_excel("fertillizer_sang.xlsx",sheet = "8.6_Ferkelerzeugung", skip=2 )
+performance_level_ferkelerzeugung
+
+# KTBL data is for 8kg Lebendmasse, daher wird das gewaehlt, Standardfutter
+
+performance_level_ferkelerzeugung_choice <- performance_level_ferkelerzeugung %>% mutate(pigs="Zuchtsauen") %>% filter(Prod_sys=="Sauen und Ferkel bis 8 kg Lebendmasse, 28 Tag Säugezeit", 
+                                                                                                                   `Einstreu kg FM/(Tier · d)`=="0.8",
+                                                                                                                   `Leistung und Futergrundlage`=="26 Ferkel,279kg Zuwachs je Tierplatz und Jahr,Standardfutter")
+
+
+performance_level_ferkelerzeugung_choice
+
+
+
+#performance_level_ferkelerzeugung_choice<-performance_level_ferkelerzeugung_choice %>% filter(`Einstreu kg FM/(TP · d)`== "0.1" | `Einstreu kg FM/(TP · d)`== "0.10")
+
+zuchtsauen<-pigs_bawue %>% filter(pigs=="Zuchtsauen")
+zuchtsauen
+
+## Estimate NPK for zuchtsauen in BaWue 2020
+zuchtsauen<- zuchtsauen %>% left_join(performance_level_ferkelerzeugung_choice %>% select(`Einstreu kg FM/(Tier · d)`:pigs), by="pigs") 
+
+zuchtsauen$N <- as.numeric(zuchtsauen$N)
+zuchtsauen$P2O5 <- as.numeric(zuchtsauen$P2O5)
+zuchtsauen$K2O <- as.numeric(zuchtsauen$K2O)
+
+zuchtsauen_NPK<-zuchtsauen %>% select(region:pigs, adj_No.:adjusted_No., Produkt="Wirtshaftsdüngerart", N:K2O) %>% mutate(N_kg_year=adj_No.*N,
+                                                                                            P2O5_kg_year=adj_No.*P2O5,
+                                                                                            K2O_kg_year=adj_No.*K2O)
+zuchtsauen_NPK
+
+# DONE schaetzung NPK for ferkeleraufzucht
+if(laptob_work==TRUE) {
+  write_xlsx(x=zuchtsauen_NPK, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/zuchtsauen_NPK.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=zuchtsauen_NPK, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/zuchtsauen_NPK.xlsx", col_names = TRUE)
+  
+}  
+
+
+# Continue with Hähnchen und Geflügel, and then stop... evtl noch Abschlag für Pferde schätzen
+
+
+
+
+
+
 
 
 #https://www.airmeet.com/e/4f6e7f80-df9b-11ed-8a4c-e342f8af2fa3
