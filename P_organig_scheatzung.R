@@ -1298,10 +1298,10 @@ gefluegel_stuttgart_check
 
 gefluegel_stuttgart<- gefluegel_stuttgart %>% filter(!NUTS_2=="NA")
 gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel")
-gefluegel_stuttgart %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with estimations for gefluegel in RP Stuttgart
+gefluegel_stuttgart %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 6 counties with estimations for gefluegel in RP Stuttgart
 
 
-gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13)
+gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./6)
 
 # liner adjustment is done here to balance the dataset
 # Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
@@ -1322,8 +1322,10 @@ gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!geflueg
 gefluegel_stuttgart<-gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>%filter(!NUTS_2=="DE113") %>%
                      left_join(
                      gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
-                     mutate(lin_adjust=No./7) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+                     mutate(lin_adjust=No./6) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
                      rbind(gefluegel_stuttgart%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+
 
 gefluegel_stuttgart %>% print(n=Inf)
 
@@ -1423,6 +1425,7 @@ gefluegel_karlsruhe %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj
 gefluegel_karlsruhe %>% print(n=Inf)
 
 ##############################################################################################################################################################
+# fuer freiburg und tuebingen muss noch angepasst werden, anpassung nach tierart nochmals unterteilen
 #RP Freiburg 
 
 gefluegel_freiburg <- No_gefluegel %>% filter(RP=="Freiburg")
@@ -1449,10 +1452,10 @@ gefluegel_freiburg_check
 
 gefluegel_freiburg<- gefluegel_freiburg %>% filter(!NUTS_2=="NA")
 gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel")
-gefluegel_freiburg %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with estimations for gefluegel in RP Freiburg
+gefluegel_freiburg %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 6 counties with estimations for gefluegel in RP Freiburg
 
 
-gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./5)
+gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./6)
 
 # liner adjustment is done here to balance the dataset
 # Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
@@ -1470,14 +1473,38 @@ gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel
 # first part of the join
 # Esslingen ist ausgenommen von adjustment
 
-gefluegel_freiburg<-gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>%
+gefluegel_freiburg<-gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>% filter(gefluegel %in% c("Junghennen")) %>%filter(!NUTS_2=="DE131") %>%
   left_join(
-    gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
-      mutate(lin_adjust=No./5) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
-  rbind(gefluegel_freiburg%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+    gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel %in% c("total_gefluegel", "Legehennen")) %>%
+      mutate(lin_adjust=No./6) %>% select(-Estimations_done)%>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")%>%
+    
+  rbind(gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(NUTS_2 %in% c("DE131"))  %>% filter(gefluegel %in% c("Junghennen")) %>%mutate(lin_adjust=0)) %>%
+  
+  
+  rbind(gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(NUTS_2 %in% c("DE131","DE133"))  %>% filter(gefluegel %in% c("Legehennen")) %>%
+          left_join(
+            gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(gefluegel %in% c( "Legehennen"))%>% select(-Estimations_done) %>%
+          mutate(lin_adjust=No./2) %>%select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")) %>%
+  
+  rbind(gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>%filter(!NUTS_2 %in% c("DE131","DE133"))  %>% filter(gefluegel %in% c("Legehennen")) %>%
+          mutate(lin_adjust=0)) %>%
+  
+  rbind(gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>% filter(gefluegel %in% c("Masthuehner_und_Haehne")) %>%
+          left_join(
+            gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(gefluegel %in% c( "Masthuehner_und_Haehne"))%>% select(-Estimations_done) %>%
+              mutate(lin_adjust=No./7) %>%select(-c(Region, NUTS_2, RP, No.)), by="gefluegel"))%>%
+
+  rbind(gefluegel_freiburg%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) %>% print(n=Inf)
+
+
 
 gefluegel_freiburg %>% print(n=Inf)
 
+#gefluegel_freiburg<-
+
+
+    
+  
 gefluegel_freiburg<-gefluegel_freiburg %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
 
 gefluegel_freiburg$adj_No.<- round(gefluegel_freiburg$adj_No.,digits = 0)
