@@ -1205,19 +1205,379 @@ if(laptob_work==TRUE) {
   
 }  
 
-
+###########################################################################################################################################################################################################
 # Continue with Hähnchen und Geflügel, and then stop... evtl noch Abschlag für Pferde schätzen
 
 
+# loading and data cleaning
+No_gefluegel <- read_excel("Tierzahlen_maerz_2020.xlsx",sheet = "Gefluegel" )
+No_gefluegel
+
+No_gefluegel<-No_gefluegel %>% mutate(insgesamt = paste0(insgesamt...7, ...8)) %>% select(-c(insgesamt...7, ...8)) %>% mutate(Legehennen=paste0(Legehennen...10, ...11)) %>%
+                 select(-c(Legehennen...10, ...11)) 
+
+No_gefluegel
+
+No_gefluegel<-No_gefluegel %>% select(Region, NUTS_2, RP, HalterInsgesamt=insgesamt...4, LegehennenhalterIn=Legehennen...5, MasthuehnerHalterIn=Masthuehner, insgesamt, Junghennen, Legehennen, `Masthuehner und Haehne`, ...13)
+No_gefluegel
+
+
+
+No_gefluegel <- No_gefluegel %>%
+  mutate(Masthuehner_und_Haehne = ifelse(!is.na(...13), paste0(`Masthuehner und Haehne`, ...13), `Masthuehner und Haehne`)) %>% select(-c(`Masthuehner und Haehne`,...13))
 
 
 
 
+No_gefluegel<-No_gefluegel %>%
+  mutate_all(~na_if(., ".")) %>% mutate_all(~na_if(., "—")) %>% mutate_all(~na_if(., "_")) %>% mutate_all(~na_if(., "z—")) %>% mutate_all(~na_if(., ".NA"))  %>% mutate_all(~na_if(., "..")) %>%
+  mutate_all(~na_if(., "—NA")) %>% mutate_all(~na_if(., ".—"))
+
+
+No_gefluegel %>% print(n=Inf)
+
+if(laptob_work==TRUE) {
+  write_xlsx(x=No_gefluegel, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/GAMS_P/Input_data/Kalkulationsdaten/Agrarstrukturerhebung/Tierzahlen_bawue_März_2020/No_gefluegel.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=No_gefluegel, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/GAMS_P/Input_data/Kalkulationsdaten/Agrarstrukturerhebung/Tierzahlen_bawue_März_2020/No_gefluegel.xlsx", col_names = TRUE)
+  
+} 
+
+
+## first step of cleaning done
+
+## filling the blanks if necessary, same procedure as pigs
+# 1.step filling the blanks by using the RP averages weighted for the region
+# 1.1 if this results in negative values for estimated animals set to zero and substract from other estimated category
+# step 2. use scaling on all that have pigs so that the amount of animals per RP is matched, and the dat is matching overall
+
+if(laptob_work==TRUE) {
+  setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+} else {
+  setwd("C:\\Users\\Tristan Herrmann\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P\\Input_data\\Kalkulationsdaten\\Agrarstrukturerhebung\\Tierzahlen_bawue_März_2020")
+}
+
+
+No_gefluegel <- read_excel("No_gefluegel_estimated.xlsx",sheet = "Gefluegel_estimated" )
+No_gefluegel
+
+No_gefluegel <- No_gefluegel %>% select(-c(HalterInsgesamt:MasthuehnerHalterIn))
+No_gefluegel <- No_gefluegel %>% select(-c(`%Jungehennen`:`scaling factor`))
+No_gefluegel <- No_gefluegel %>% select(-c(Check))
+
+########################################################################################################################################
+
+#scaling so that RP values are matched
+gefluegel_stuttgart <- No_gefluegel %>% filter(RP=="Stuttgart")
+gefluegel_karlsruhe <- No_gefluegel %>% filter(RP=="Karlsruhe")
+gefluegel_tuebingen <- No_gefluegel %>% filter(RP=="Tuebingen")
+gefluegel_freiburg <- No_gefluegel %>% filter(RP=="Freiburg")
+
+# starting with Stuttgart
+gefluegel_stuttgart
+
+# filter for regions having gefluegel
+
+gefluegel_stuttgart<-gefluegel_stuttgart %>% rename(total_gefluegel="insgesamt")
+
+gefluegel_stuttgart<-replace_na(gefluegel_stuttgart, list(total_gefluegel = 0,
+                                                          Junghennen=0,
+                                                          Legehennen=0,
+                                                          Masthuehner_und_Haehne=0))
+
+
+gefluegel_stuttgart<-gefluegel_stuttgart  %>% pivot_longer(cols = c(total_gefluegel, Junghennen, Legehennen, Masthuehner_und_Haehne), names_to = "gefluegel")  %>%
+rename(No.="value")
+
+print(gefluegel_stuttgart, n=Inf)
+
+
+gefluegel_stuttgart_check<- gefluegel_stuttgart %>% filter(NUTS_2=="NA")
+gefluegel_stuttgart_check
+
+gefluegel_stuttgart<- gefluegel_stuttgart %>% filter(!NUTS_2=="NA")
+gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel")
+gefluegel_stuttgart %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with estimations for gefluegel in RP Stuttgart
+
+
+gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13)
+
+# liner adjustment is done here to balance the dataset
+# Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
+# Allerdings möchte ich das nicht machen wenn die Daten auf Kreisebene eigentlich passe, also Check =0 gilt, ich möchte dieses lineare adjustent nur fuer Kreise machen wo ich "herumgeschaetzt" habe
+# Wobei ich hier auch auf die STadtkreise aufpasen sollte 
+
+# gefluegel_stuttgart <-gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% 
+#   left_join(
+#     gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")
+# 
+# gefluegel_stuttgart<-gefluegel_stuttgart %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+# change of procedure
+# first part of the join
+# Esslingen ist ausgenommen von adjustment
+
+gefluegel_stuttgart<-gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>%filter(!NUTS_2=="DE113") %>%
+                     left_join(
+                     gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+                     mutate(lin_adjust=No./7) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+                     rbind(gefluegel_stuttgart%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+gefluegel_stuttgart %>% print(n=Inf)
+
+gefluegel_stuttgart<-gefluegel_stuttgart %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+gefluegel_stuttgart$adj_No.<- round(gefluegel_stuttgart$adj_No.,digits = 0)
+gefluegel_stuttgart
+
+
+
+# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 2,079,973 gefluegel in Bawue stuttgart
+gefluegel_stuttgart_check
+
+gefluegel_stuttgart %>%ungroup() %>% summarize(No.gefluegel_stuttgart=sum(adj_No.)) # after linearly upscaling across all NUTS with gefluegel it matches 
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+
+gefluegel_stuttgart %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+gefluegel_stuttgart %>% print(n=Inf)
+
+#########################################################################################################################################################
+# karlsruhe
+gefluegel_karlsruhe <- No_gefluegel %>% filter(RP=="Karlsruhe")
+gefluegel_karlsruhe
+
+# filter for regions having gefluegel
+
+gefluegel_karlsruhe<-gefluegel_karlsruhe %>% rename(total_gefluegel="insgesamt")
+
+gefluegel_karlsruhe<-replace_na(gefluegel_karlsruhe, list(total_gefluegel = 0,
+                                                          Junghennen=0,
+                                                          Legehennen=0,
+                                                          Masthuehner_und_Haehne=0))
+
+
+gefluegel_karlsruhe<-gefluegel_karlsruhe  %>% pivot_longer(cols = c(total_gefluegel, Junghennen, Legehennen, Masthuehner_und_Haehne), names_to = "gefluegel")  %>%
+  rename(No.="value")
+
+print(gefluegel_karlsruhe, n=Inf)
+
+
+gefluegel_karlsruhe_check<- gefluegel_karlsruhe %>% filter(NUTS_2=="NA")
+gefluegel_karlsruhe_check
+
+gefluegel_karlsruhe<- gefluegel_karlsruhe %>% filter(!NUTS_2=="NA")
+gefluegel_karlsruhe %>% filter(!gefluegel=="total_gefluegel")
+gefluegel_karlsruhe %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 8 counties with estimations for gefluegel in RP Stuttgart
+
+
+gefluegel_karlsruhe_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./5)
+
+# liner adjustment is done here to balance the dataset
+# Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
+# Allerdings möchte ich das nicht machen wenn die Daten auf Kreisebene eigentlich passe, also Check =0 gilt, ich möchte dieses lineare adjustent nur fuer Kreise machen wo ich "herumgeschaetzt" habe
+# Wobei ich hier auch auf die STadtkreise aufpasen sollte 
+
+# gefluegel_karlsruhe <-gefluegel_karlsruhe %>% filter(!gefluegel=="total_gefluegel") %>% 
+#   left_join(
+#     gefluegel_karlsruhe_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")
+# 
+# gefluegel_karlsruhe<-gefluegel_karlsruhe %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+# change of procedure
+# first part of the join
+# Esslingen ist ausgenommen von adjustment
+
+gefluegel_karlsruhe<-gefluegel_karlsruhe %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>%
+  left_join(
+    gefluegel_karlsruhe_check %>% filter(!Region=="RP Karlsruhe") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+      mutate(lin_adjust=No./5) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+  rbind(gefluegel_karlsruhe%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+gefluegel_karlsruhe %>% print(n=Inf)
+
+gefluegel_karlsruhe<-gefluegel_karlsruhe %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+gefluegel_karlsruhe$adj_No.<- round(gefluegel_karlsruhe$adj_No.,digits = 0)
+gefluegel_karlsruhe
+
+
+
+# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 295,710 gefluegel in Bawue stuttgart
+gefluegel_karlsruhe_check
+
+gefluegel_karlsruhe %>%ungroup() %>% summarize(No.gefluegel_karlsruhe=sum(adj_No.)) # after linearly upscaling across all NUTS with gefluegel it matches +1
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+
+gefluegel_karlsruhe %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+gefluegel_karlsruhe %>% print(n=Inf)
+
+##############################################################################################################################################################
+#RP Freiburg 
+
+gefluegel_freiburg <- No_gefluegel %>% filter(RP=="Freiburg")
+gefluegel_freiburg
+
+# filter for regions having gefluegel
+
+gefluegel_freiburg<-gefluegel_freiburg %>% rename(total_gefluegel="insgesamt")
+
+gefluegel_freiburg<-replace_na(gefluegel_freiburg, list(total_gefluegel = 0,
+                                                          Junghennen=0,
+                                                          Legehennen=0,
+                                                          Masthuehner_und_Haehne=0))
+
+
+gefluegel_freiburg<-gefluegel_freiburg  %>% pivot_longer(cols = c(total_gefluegel, Junghennen, Legehennen, Masthuehner_und_Haehne), names_to = "gefluegel")  %>%
+  rename(No.="value")
+
+print(gefluegel_freiburg, n=Inf)
+
+
+gefluegel_freiburg_check<- gefluegel_freiburg %>% filter(NUTS_2=="NA")
+gefluegel_freiburg_check
+
+gefluegel_freiburg<- gefluegel_freiburg %>% filter(!NUTS_2=="NA")
+gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel")
+gefluegel_freiburg %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with estimations for gefluegel in RP Freiburg
+
+
+gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./5)
+
+# liner adjustment is done here to balance the dataset
+# Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
+# Allerdings möchte ich das nicht machen wenn die Daten auf Kreisebene eigentlich passe, also Check =0 gilt, ich möchte dieses lineare adjustent nur fuer Kreise machen wo ich "herumgeschaetzt" habe
+# Wobei ich hier auch auf die STadtkreise aufpasen sollte 
+
+# gefluegel_freiburg <-gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% 
+#   left_join(
+#     gefluegel_freiburg_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")
+# 
+# gefluegel_freiburg<-gefluegel_freiburg %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+# change of procedure
+# first part of the join
+# Esslingen ist ausgenommen von adjustment
+
+gefluegel_freiburg<-gefluegel_freiburg %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>%
+  left_join(
+    gefluegel_freiburg_check %>% filter(!Region=="RP Freiburg") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+      mutate(lin_adjust=No./5) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+  rbind(gefluegel_freiburg%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+gefluegel_freiburg %>% print(n=Inf)
+
+gefluegel_freiburg<-gefluegel_freiburg %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+gefluegel_freiburg$adj_No.<- round(gefluegel_freiburg$adj_No.,digits = 0)
+gefluegel_freiburg
+
+
+
+# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 295,710 gefluegel in Bawue stuttgart
+gefluegel_freiburg_check
+
+gefluegel_freiburg %>%ungroup() %>% summarize(No.gefluegel_freiburg=sum(adj_No.)) # after linearly upscaling across all NUTS with gefluegel it matches +1
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+
+gefluegel_freiburg %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+gefluegel_freiburg %>% print(n=Inf)
 
 
 #https://www.airmeet.com/e/4f6e7f80-df9b-11ed-8a4c-e342f8af2fa3
 
+##################################################################################################################################################################
+#RP Tuebingen
 
+gefluegel_tuebingen <- No_gefluegel %>% filter(RP=="Tuebingen")
+gefluegel_tuebingen
+
+# filter for regions having gefluegel
+
+gefluegel_tuebingen<-gefluegel_tuebingen %>% rename(total_gefluegel="insgesamt")
+
+gefluegel_tuebingen<-replace_na(gefluegel_tuebingen, list(total_gefluegel = 0,
+                                                        Junghennen=0,
+                                                        Legehennen=0,
+                                                        Masthuehner_und_Haehne=0))
+
+
+gefluegel_tuebingen<-gefluegel_tuebingen  %>% pivot_longer(cols = c(total_gefluegel, Junghennen, Legehennen, Masthuehner_und_Haehne), names_to = "gefluegel")  %>%
+  rename(No.="value")
+
+print(gefluegel_tuebingen, n=Inf)
+
+
+gefluegel_tuebingen_check<- gefluegel_tuebingen %>% filter(NUTS_2=="NA")
+gefluegel_tuebingen_check
+
+gefluegel_tuebingen<- gefluegel_tuebingen %>% filter(!NUTS_2=="NA")
+gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel")
+gefluegel_tuebingen %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 4 counties with estimations for gefluegel in RP Freiburg
+
+
+gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./4)
+
+# liner adjustment is done here to balance the dataset
+# Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
+# Allerdings möchte ich das nicht machen wenn die Daten auf Kreisebene eigentlich passe, also Check =0 gilt, ich möchte dieses lineare adjustent nur fuer Kreise machen wo ich "herumgeschaetzt" habe
+# Wobei ich hier auch auf die STadtkreise aufpasen sollte 
+
+# gefluegel_tuebingen <-gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% 
+#   left_join(
+#     gefluegel_tuebingen_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./13) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")
+# 
+# gefluegel_tuebingen<-gefluegel_tuebingen %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+
+# change of procedure
+# first part of the join
+# Esslingen ist ausgenommen von adjustment
+
+gefluegel_tuebingen<-gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>%
+  left_join(
+    gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+      mutate(lin_adjust=No./5) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+  rbind(gefluegel_tuebingen%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+gefluegel_tuebingen %>% print(n=Inf)
+
+gefluegel_tuebingen<-gefluegel_tuebingen %>% rowwise() %>% mutate(adj_No.=No.+lin_adjust)
+
+gefluegel_tuebingen$adj_No.<- round(gefluegel_tuebingen$adj_No.,digits = 0)
+gefluegel_tuebingen
+
+
+
+# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 295,710 gefluegel in Bawue stuttgart
+gefluegel_tuebingen_check
+
+gefluegel_tuebingen %>%ungroup() %>% summarize(No.gefluegel_tuebingen=sum(adj_No.)) # after linearly upscaling across all NUTS with gefluegel it matches +1
+
+
+# How much % is the increase now?
+# percentag increase haelt sich in Grenzen, skalierung bedeutet jedoch, dass Regionen mit wenig Schweinen einen höheren prozentualen Saklierungseffekt erfahren
+# andere Argumentationen waeren diese Anzahl vermehrt Regionen mit eh schon vielen Schweinen zuzuschlagen, aber vorerst bleibt das so
+
+gefluegel_tuebingen %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
+gefluegel_tuebingen %>% print(n=Inf)
+
+# Note beim linear adjust will ich eigentlich dass nur die angepasst werden wo ich gefüllt habe, hier ist es jetzt so dass pauschal alle angepasst werden... also in vielen Fällen muss ich die Legehennen ausklammern
 
 
 
