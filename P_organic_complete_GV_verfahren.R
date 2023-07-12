@@ -138,6 +138,13 @@ if(laptob_work==TRUE) {
 rm(ziegen_1, ziegen_2, ziegen_bawue, pferde_2, pferde_3, pferde_4, pferde_bawue, schafe_1, 
    schafe_2, schafe_bawue, schweine_1, schweine_2, schweine_bawue, rinder_1, rinder_2, rinder_bawue, 
    gefluegel_1, gefluegel_2,gefluegel_bawue)
+
+#####################################################################################################################################################################################
+
+# original data
+nutztiere_bawue
+
+
 ############################################################################################################################################################################################################
 
 # select Daten auf Ebene des RPs und auf Ebene Gesamt_bawue
@@ -209,7 +216,7 @@ GV_thuenen_bawue<-GV_thuenen_bawue  %>% mutate(RP=case_when(
 ))
 
 ###############################################################################################################################################################################################
-# adjust POUF with POUF_T
+# adjust POUF with POUF_T # not needed anymore
 
 if(laptob_work==TRUE) {
   setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\Agraratlas_Daten_Thuenen")
@@ -369,7 +376,8 @@ no_masthuehner_estimate$no._masthuehner_estimated<-round(no_masthuehner_estimate
 
 ###########################################################################################################################################################################################
 
-# Create the scaling factor for each column by RP
+
+# Create the scaling factor for each column by RP# scaling factor ansatz
 
 RP_stuttgart <- filter(GV_thuenen_bawue, RP=="RP_Stuttgart")
 RP_karlsruhe <- filter(GV_thuenen_bawue, RP=="RP_Karlsruhe")
@@ -458,6 +466,22 @@ first_estimate_num<-GV_thuenen_bawue  %>% mutate(DCOW_num=case_when(
     RP %in% "RP_Tuebingen" == TRUE   ~ (34012+69193)*CALV_scale
   )) %>% 
 
+mutate(CALV_num_male=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (34557)*CALV_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (9383)*CALV_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (22805)*CALV_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (34012)*CALV_scale
+  )) %>% 
+  
+mutate(CALV_num_female=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (51542)*CALV_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (13368)*CALV_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (33998)*CALV_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (69193)*CALV_scale
+  )) %>%   
+  
 # HEIT including 1 bis 2 JAhre und über 2 jahre (nicht abgekalbt)
   mutate(HEIT_num=case_when(
 
@@ -465,6 +489,22 @@ first_estimate_num<-GV_thuenen_bawue  %>% mutate(DCOW_num=case_when(
     RP %in% "RP_Karlsruhe" == TRUE   ~ (3983+13047)*HEIT_scale,
     RP %in% "RP_Freiburg" == TRUE    ~ (12018+30366)*HEIT_scale,
     RP %in% "RP_Tuebingen" == TRUE   ~ (22944+65489)*HEIT_scale
+  )) %>%
+
+mutate(HEIT_num_2jahre_aelter=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (15480)*HEIT_scale,
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (3983)*HEIT_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (12018)*HEIT_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (22944)*HEIT_scale
+  )) %>%
+  
+mutate(HEIT_num_ein_bis_jahre=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (47790)*HEIT_scale,
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (13047)*HEIT_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (30366)*HEIT_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (65489)*HEIT_scale
   )) %>%
 
 # Heit nur ueber 2 Jahre
@@ -483,6 +523,22 @@ mutate(BULL_num=case_when(
     RP %in% "RP_Karlsruhe" == TRUE   ~ (895+6377)*BULL_scale,
     RP %in% "RP_Freiburg" == TRUE    ~ (2104+12847)*BULL_scale,
     RP %in% "RP_Tuebingen" == TRUE   ~ (1847+21278)*BULL_scale
+  )) %>%
+  
+mutate(BULL_num_2jahre_aelter=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (2107)*BULL_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (895)*BULL_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (2104)*BULL_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (1847)*BULL_scale
+  )) %>%
+  
+mutate(BULL_num_ein_bis_jahre=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (22619)*BULL_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (6377)*BULL_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (12847)*BULL_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (21278)*BULL_scale
   )) %>%
 
 # # ferkel und andere schweine
@@ -543,6 +599,68 @@ select(RP:allYEAR, DCOW_num:POUF_num)
 
 first_estimate_num
 
+#############################################################################################################################################
+# Do the estimations in accordance with thuenen, emission inventroy
+
+#Calves factor 4/12
+
+first_estimate_num<-first_estimate_num %>% mutate(calves_EI=4/12*CALV_num)
+
+# total amount of heifers
+first_estimate_num<-first_estimate_num %>% mutate(total_heifers_EI= CALV_num*((1-4/12)*0.6)+ HEIT_num_ein_bis_jahre+HEIT_num_2jahre_aelter) 
+first_estimate_num %>% summarize(sum(total_heifers_EI, na.rm=T))
+
+
+# dairy heifers & female beef cattle
+first_estimate_num<-first_estimate_num %>% mutate(female_beef_cattle=total_heifers_EI*11.94/100) %>% mutate(dairy_heifers=total_heifers_EI-female_beef_cattle)
+first_estimate_num %>% select(total_heifers_EI, female_beef_cattle, dairy_heifers) %>% summarize(across(total_heifers_EI:dairy_heifers, sum))
+
+
+#male beef cattle
+first_estimate_num %>% mutate(MaleBeefCattle= CALV_num*((1-4/12)*0.4)+ BULL_num_2jahre_aelter+ BULL_num_ein_bis_jahre)%>%
+                       select(MaleBeefCattle) %>% summarize(sum(MaleBeefCattle))
+                  
+first_estimate_num <-first_estimate_num %>% mutate(MaleBeefCattle= CALV_num*((1-4/12)*0.4)+ BULL_num_2jahre_aelter+ BULL_num_ein_bis_jahre)
+
+#### DEaling with ferkel, zuchtsauen etc
+
+nutztiere_kreise_bawue$ferkel <- as.numeric(nutztiere_kreise_bawue$ferkel)
+
+nutztiere_kreise_bawue %>% filter(RP=="RP_Stuttgart") %>% select(ferkel)
+
+nutztiere_kreise_bawue<-nutztiere_kreise_bawue  %>% mutate(RP=case_when(
+  
+  NUTS_2 %in% c("DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A","DE11B","DE11C","DE11D") == TRUE  ~ "RP_Stuttgart", 
+  NUTS_2 %in% c("DE121","DE122","DE123","DE124","DE125", "DE126", "DE127", "DE128", "DE129", "DE12A","DE12B", "DE12C") == TRUE  ~ "RP_Karlsruhe",
+  NUTS_2 %in% c("DE131","DE132","DE133","DE134", "DE135","DE136","DE137","DE138","DE139","DE13A") == TRUE  ~ "RP_Freiburg",
+  NUTS_2 %in% c("DE141","DE142","DE143","DE144","DE145","DE146","DE147","DE148","DE149") == TRUE  ~ "RP_Tuebingen"
+  
+))
+
+# see excel kreis complete um zu sehen woher die zahlen kommen, letztendlich werden die restmengen vertielt auf die kreise die ungleich 0 sind
+ferkel_estimate<-nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Stuttgart") %>%
+  mutate(ferkel_estimate= if_else(ferkel==0, (392170-388221)/2, ferkel)) %>%
+  
+  
+  rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Karlsruhe") %>%
+         mutate(ferkel_estimate= if_else(ferkel==0, (17369-16084)/2, ferkel)  )) %>%
+  
+  
+  rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Freiburg") %>%
+        mutate(ferkel_estimate= if_else(ferkel==0, (32877-32380)/2, ferkel) )) %>%
+  
+  
+  rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Tuebingen") %>%
+         mutate(ferkel_estimate= ferkel) )
+
+
+first_estimate_num <-first_estimate_num %>% left_join(ferkel_estimate%>% select(NUTS_2, ferkel_estimate), by="NUTS_2")
+
+### schetzung fuer suckling pigs von ferkel abziehen
+first_estimate_num <- first_estimate_num %>% mutate(suckling_pigs=0.5771*ferkel_estimate) %>% mutate(ferkel=ferkel_estimate-suckling_pigs)
+first_estimate_num %>% summarize(sum(ferkel, na.rm=T))
+
+
 options(scipen = 999)
 
 # get the masthuehner estimate inside, oder anders gesagt mastgefluegel ausgedrückt in masthuehner
@@ -550,15 +668,15 @@ options(scipen = 999)
 first_estimate_num<-first_estimate_num %>% left_join(no_masthuehner_estimate, by="NUTS_2")
 
 
-first_estimate_num$DCOW_num<-round(first_estimate_num$DCOW_num,digits = 0)
-first_estimate_num$SCOW_num<-round(first_estimate_num$SCOW_num,digits = 0)
-first_estimate_num$CALV_num<-round(first_estimate_num$CALV_num,digits = 0)
-first_estimate_num$HEIT_num<-round(first_estimate_num$HEIT_num,digits = 0)
-first_estimate_num$BULL_num<-round(first_estimate_num$BULL_num,digits = 0)
-first_estimate_num$PIGF_num<-round(first_estimate_num$PIGF_num,digits = 0)
-first_estimate_num$SOWS_num<-round(first_estimate_num$SOWS_num,digits = 0)
-first_estimate_num$HENS_num<-round(first_estimate_num$HENS_num,digits = 0)
-first_estimate_num$POUF_num<-round(first_estimate_num$POUF_num,digits = 0)
+#first_estimate_num$DCOW_num<-round(first_estimate_num$DCOW_num,digits = 0)
+#first_estimate_num$SCOW_num<-round(first_estimate_num$SCOW_num,digits = 0)
+#first_estimate_num$CALV_num<-round(first_estimate_num$CALV_num,digits = 0)
+#first_estimate_num$HEIT_num<-round(first_estimate_num$HEIT_num,digits = 0)
+#first_estimate_num$BULL_num<-round(first_estimate_num$BULL_num,digits = 0)
+#first_estimate_num$PIGF_num<-round(first_estimate_num$PIGF_num,digits = 0)
+#first_estimate_num$SOWS_num<-round(first_estimate_num$SOWS_num,digits = 0)
+#first_estimate_num$HENS_num<-round(first_estimate_num$HENS_num,digits = 0)
+#first_estimate_num$POUF_num<-round(first_estimate_num$POUF_num,digits = 0)
 
 first_estimate_num %>% group_by(RP) %>% summarize(sum(DCOW_num))
 first_estimate_num %>% print(n=Inf)
@@ -640,38 +758,38 @@ first_estimate_num %>% select(-POUF_num)
 nutztiere_kreise_bawue
 nutztiere_RP_Bawue %>% select(region,ferkel)
 
-nutztiere_kreise_bawue<-nutztiere_kreise_bawue  %>% mutate(RP=case_when(
-  
-  NUTS_2 %in% c("DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A","DE11B","DE11C","DE11D") == TRUE  ~ "RP_Stuttgart", 
-  NUTS_2 %in% c("DE121","DE122","DE123","DE124","DE125", "DE126", "DE127", "DE128", "DE129", "DE12A","DE12B", "DE12C") == TRUE  ~ "RP_Karlsruhe",
-  NUTS_2 %in% c("DE131","DE132","DE133","DE134", "DE135","DE136","DE137","DE138","DE139","DE13A") == TRUE  ~ "RP_Freiburg",
-  NUTS_2 %in% c("DE141","DE142","DE143","DE144","DE145","DE146","DE147","DE148","DE149") == TRUE  ~ "RP_Tuebingen"
-  
-))
+# nutztiere_kreise_bawue<-nutztiere_kreise_bawue  %>% mutate(RP=case_when(
+#   
+#   NUTS_2 %in% c("DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A","DE11B","DE11C","DE11D") == TRUE  ~ "RP_Stuttgart", 
+#   NUTS_2 %in% c("DE121","DE122","DE123","DE124","DE125", "DE126", "DE127", "DE128", "DE129", "DE12A","DE12B", "DE12C") == TRUE  ~ "RP_Karlsruhe",
+#   NUTS_2 %in% c("DE131","DE132","DE133","DE134", "DE135","DE136","DE137","DE138","DE139","DE13A") == TRUE  ~ "RP_Freiburg",
+#   NUTS_2 %in% c("DE141","DE142","DE143","DE144","DE145","DE146","DE147","DE148","DE149") == TRUE  ~ "RP_Tuebingen"
+#   
+# ))
 
-nutztiere_kreise_bawue$ferkel <- as.numeric(nutztiere_kreise_bawue$ferkel)
-
-nutztiere_kreise_bawue %>% filter(RP=="RP_Stuttgart") %>% select(ferkel)
-
-
-# see excel kreis complete um zu sehen woher die zahlen kommen, letztendlich werden die restmengen vertielt auf die kreise die ungleich 0 sind
-ferkel_estimate<-nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Stuttgart") %>%
-                           mutate(ferkel_estimate= if_else(ferkel==0, (392170-388221)/2, ferkel)) %>%
-
-
-rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Karlsruhe") %>%
-  mutate(ferkel_estimate= if_else(ferkel==0, (17369-16084)/2, ferkel)  )) %>%
-  
-  
-rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Freiburg") %>%
-         mutate(ferkel_estimate= if_else(ferkel==0, (32877-32380)/2, ferkel) )) %>%
-  
-
-rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Tuebingen") %>%
-        mutate(ferkel_estimate= ferkel) )
-
-
-first_estimate_num <-first_estimate_num %>% left_join(ferkel_estimate%>% select(NUTS_2, ferkel_estimate), by="NUTS_2")
+# nutztiere_kreise_bawue$ferkel <- as.numeric(nutztiere_kreise_bawue$ferkel)
+# 
+# nutztiere_kreise_bawue %>% filter(RP=="RP_Stuttgart") %>% select(ferkel)
+# 
+# 
+# # see excel kreis complete um zu sehen woher die zahlen kommen, letztendlich werden die restmengen vertielt auf die kreise die ungleich 0 sind
+# ferkel_estimate<-nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Stuttgart") %>%
+#                            mutate(ferkel_estimate= if_else(ferkel==0, (392170-388221)/2, ferkel)) %>%
+# 
+# 
+# rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Karlsruhe") %>%
+#   mutate(ferkel_estimate= if_else(ferkel==0, (17369-16084)/2, ferkel)  )) %>%
+#   
+#   
+# rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Freiburg") %>%
+#          mutate(ferkel_estimate= if_else(ferkel==0, (32877-32380)/2, ferkel) )) %>%
+#   
+# 
+# rbind(nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>% as_tibble() %>% filter(RP=="RP_Tuebingen") %>%
+#         mutate(ferkel_estimate= ferkel) )
+# 
+# 
+# first_estimate_num <-first_estimate_num %>% left_join(ferkel_estimate%>% select(NUTS_2, ferkel_estimate), by="NUTS_2")
 first_estimate_num <- first_estimate_num %>% mutate(unit="No_of_animals")
 first_estimate_num%>% print(n=Inf)
 
