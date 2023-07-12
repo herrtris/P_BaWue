@@ -253,7 +253,7 @@ milchkuehe$Vorderwaelder<-round(milchkuehe$Vorderwaelder,digits = 0)
 
 milchkuehe %>% print(n=Inf)
 
-# DONE! Milchkühe je Region splitted by 4 different races
+# DONE! Milchkühe je Region splitted by 5 different races
 
 
 
@@ -380,9 +380,9 @@ print(avg_milk_production_2021, n=Inf)
 # Result, the adjustement was succesful
 
 
-#adjusted average milk production contains the values needed, die Milchleistung je Tier wurde hochskaliert nicht die Tierzahl!
+#adjusted average milk production contains the values needed, die Milchleistung je Tier wurde hochskaliert/runterskaliert nicht die Tierzahl!
 #Annahme: es gibt kreisunterschiede bei der milchleistung. 
-milchkuehe_2
+milchkuehe_2 %>% print(n=Inf)
 milchkuehe_2$adjusted_avg_milk_production<-round(milchkuehe_2$adjusted_avg_milk_production,digits = 0)
 
 
@@ -1286,6 +1286,14 @@ gefluegel_stuttgart<-replace_na(gefluegel_stuttgart, list(total_gefluegel = 0,
                                                           Legehennen=0,
                                                           Masthuehner_und_Haehne=0))
 
+# checking using data from Agraratlas Thuenen GV je ha for Masthuehner
+gefluegel_stuttgart %>% select(Region:NUTS_2, Masthuehner_und_Haehne, Estimations_done, GV_ha_masthuenher = `Thuenen GV_ha_masthuehner (GV/ha)`, landwirtschaftliche_Flaeche) %>%
+                        mutate(GV_kreis=landwirtschaftliche_Flaeche* GV_ha_masthuenher) %>% filter(!is.na(GV_kreis))%>%arrange(desc(GV_kreis)) 
+
+
+
+
+
 
 gefluegel_stuttgart<-gefluegel_stuttgart  %>% pivot_longer(cols = c(total_gefluegel, Junghennen, Legehennen, Masthuehner_und_Haehne), names_to = "gefluegel")  %>%
 rename(No.="value")
@@ -1298,10 +1306,10 @@ gefluegel_stuttgart_check
 
 gefluegel_stuttgart<- gefluegel_stuttgart %>% filter(!NUTS_2=="NA")
 gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel")
-gefluegel_stuttgart %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 6 counties with estimations for gefluegel in RP Stuttgart
+gefluegel_stuttgart %>% filter(Estimations_done==TRUE) %>% group_by(NUTS_2) %>% count() ## in total there are 7 counties with estimations for gefluegel in RP Stuttgart
 
 
-gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./6)
+gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% mutate(lin_adjust=No./7)
 
 # liner adjustment is done here to balance the dataset
 # Here for Stuttgart die Abweichung wird geteilt durch die Anzahl der kreise mit  Geflügel und diskrepanz wird dann schlicht auf alle auf oder abgeschlagen:
@@ -1319,11 +1327,66 @@ gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!geflueg
 # first part of the join
 # Esslingen ist ausgenommen von adjustment
 
+
+
+
+
+
+
+
+
+
 gefluegel_stuttgart<-gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>%filter(!NUTS_2=="DE113") %>%
                      left_join(
                      gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
                      mutate(lin_adjust=No./6) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
                      rbind(gefluegel_stuttgart%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+
+
+
+gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>% filter(gefluegel %in% c("Junghennen")) %>%
+  left_join(
+    gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(!gefluegel %in% c("total_gefluegel", "Legehennen")) %>%
+      mutate(lin_adjust=No./7) %>% select(-Estimations_done)%>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")%>%
+  
+  rbind(gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(NUTS_2 %in% c("DE131"))  %>% filter(gefluegel %in% c("Junghennen")) %>%mutate(lin_adjust=0)) 
+  
+ 
+
+
+ 
+  gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(NUTS_2 %in% c("DE131","DE133"))  %>% filter(gefluegel %in% c("Legehennen")) %>%
+          left_join(
+            gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(gefluegel %in% c( "Legehennen"))%>% select(-Estimations_done) %>%
+              mutate(lin_adjust=No./2) %>%select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>%
+  
+  rbind(gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>%filter(!NUTS_2 %in% c("DE131","DE133"))  %>% filter(gefluegel %in% c("Legehennen")) %>%
+          mutate(lin_adjust=0)) 
+  
+  gefluegel_stuttgart %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>% filter(gefluegel %in% c("Masthuehner_und_Haehne")) %>%
+          left_join(
+            gefluegel_stuttgart_check %>% filter(!Region=="RP Stuttgart") %>%filter(gefluegel %in% c( "Masthuehner_und_Haehne"))%>% select(-Estimations_done) %>%
+              mutate(lin_adjust=No./7) %>%select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")%>%
+  
+  rbind(gefluegel_stuttgart%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) %>% print(n=Inf)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1429,6 +1492,7 @@ gefluegel_karlsruhe %>% print(n=Inf)
 #RP Freiburg 
 
 gefluegel_freiburg <- No_gefluegel %>% filter(RP=="Freiburg")
+total_gefluegel <- gefluegel_freiburg %>% select(NUTS_2,total_gefluegel=insgesamt) %>% filter(!NUTS_2=="NA")
 gefluegel_freiburg
 
 # filter for regions having gefluegel
@@ -1526,12 +1590,17 @@ gefluegel_freiburg %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_
 gefluegel_freiburg %>% print(n=Inf)
 
 
+gefluegel_freiburg %>% select(Region:gefluegel, adj_No.) %>% pivot_wider(values_from = adj_No., names_from = gefluegel) %>%rowwise() %>% 
+                        mutate(rowsum_kreis=sum(Junghennen, Legehennen, Masthuehner_und_Haehne)) %>%
+                        left_join(total_gefluegel, by="NUTS_2") %>% mutate(Prozent_abweichung=(rowsum_kreis-total_gefluegel)/rowsum_kreis*100)
+
 #https://www.airmeet.com/e/4f6e7f80-df9b-11ed-8a4c-e342f8af2fa3
 
 ##################################################################################################################################################################
 #RP Tuebingen
 
 gefluegel_tuebingen <- No_gefluegel %>% filter(RP=="Tuebingen")
+total_gefluegel <- gefluegel_tuebingen %>% select(NUTS_2,total_gefluegel=insgesamt) %>% filter(!NUTS_2=="NA")
 gefluegel_tuebingen
 
 # filter for regions having gefluegel
@@ -1576,11 +1645,34 @@ gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!geflueg
 # first part of the join
 # Esslingen ist ausgenommen von adjustment
 
-gefluegel_tuebingen<-gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE)  %>%
+
+
+
+# Stadtkreis Ulm wir ausgeklammert, der increase waere viel zu viel!
+
+gefluegel_tuebingen<-gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>% filter(gefluegel=="Junghennen") %>% filter(!NUTS_2=="DE144") %>%
   left_join(
     gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
-      mutate(lin_adjust=No./5) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
-  rbind(gefluegel_tuebingen%>% filter(Estimations_done==FALSE) %>%filter(!gefluegel=="total_gefluegel") %>% mutate(lin_adjust=0)) 
+      mutate(lin_adjust=No./3) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel") %>% 
+  
+  rbind(gefluegel_tuebingen%>% filter(Estimations_done==FALSE | NUTS_2=="DE144" ) %>%filter(!gefluegel=="total_gefluegel" & gefluegel=="Junghennen") %>% mutate(lin_adjust=0)) %>%
+
+# Ulm und Zollernalbkreis ausgenommen
+rbind (gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>% filter(gefluegel=="Masthuehner_und_Haehne") %>% filter(!NUTS_2=="DE144" & !NUTS_2=="DE143") %>%
+  left_join(
+    gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+      mutate(lin_adjust=No./2) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")) %>% 
+  
+  rbind(gefluegel_tuebingen%>% filter(Estimations_done==FALSE | NUTS_2=="DE144" | NUTS_2=="DE143" ) %>%filter(!gefluegel=="total_gefluegel" & gefluegel=="Masthuehner_und_Haehne") %>% mutate(lin_adjust=0)) %>%
+
+# Legehennen werden dem Bodenssekreis aufgeschlagen
+rbind(gefluegel_tuebingen %>% filter(!gefluegel=="total_gefluegel") %>% filter(Estimations_done==TRUE) %>% filter(gefluegel=="Legehennen") %>% filter(NUTS_2=="DE147") %>%
+  left_join(
+    gefluegel_tuebingen_check %>% filter(!Region=="RP Tuebingen") %>%filter(!gefluegel=="total_gefluegel")%>% select(-Estimations_done) %>%
+      mutate(lin_adjust=No./1) %>% select(-c(Region, NUTS_2, RP, No.)), by="gefluegel")) %>% 
+  
+  rbind(gefluegel_tuebingen%>% filter(Estimations_done==FALSE | NUTS_2=="DE144" | NUTS_2=="DE143" | NUTS_2 =="DE142" ) %>%filter(!gefluegel=="total_gefluegel" & gefluegel=="Legehennen") %>% mutate(lin_adjust=0))
+
 
 gefluegel_tuebingen %>% print(n=Inf)
 
@@ -1589,12 +1681,16 @@ gefluegel_tuebingen<-gefluegel_tuebingen %>% rowwise() %>% mutate(adj_No.=No.+li
 gefluegel_tuebingen$adj_No.<- round(gefluegel_tuebingen$adj_No.,digits = 0)
 gefluegel_tuebingen
 
+# set one negative value to zero
+gefluegel_tuebingen$adj_No.[gefluegel_tuebingen$adj_No. < 0] <- 0
 
 
-# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 295,710 gefluegel in Bawue stuttgart
+
+# does it now match the total amount of gefluegel in BaWue Stuttgart after rounding? In total there are 1,869,797 gefluegel in Bawue stuttgart
 gefluegel_tuebingen_check
 
-gefluegel_tuebingen %>%ungroup() %>% summarize(No.gefluegel_tuebingen=sum(adj_No.)) # after linearly upscaling across all NUTS with gefluegel it matches +1
+# it is higher because of setting to zero before
+gefluegel_tuebingen %>%ungroup() %>% summarize(No.gefluegel_tuebingen=sum(adj_No.)) # after linearly upscaling  across all NUTS with gefluegel it matches  1,870,399
 
 
 # How much % is the increase now?
@@ -1604,7 +1700,8 @@ gefluegel_tuebingen %>%ungroup() %>% summarize(No.gefluegel_tuebingen=sum(adj_No
 gefluegel_tuebingen %>% rowwise() %>% mutate(percent_increase=(adj_No.- No.)/adj_No.*100)
 gefluegel_tuebingen %>% print(n=Inf)
 
-# Note beim linear adjust will ich eigentlich dass nur die angepasst werden wo ich gefüllt habe, hier ist es jetzt so dass pauschal alle angepasst werden... also in vielen Fällen muss ich die Legehennen ausklammern
 
-
+gefluegel_tuebingen %>% select(Region:gefluegel, adj_No.) %>% pivot_wider(values_from = adj_No., names_from = gefluegel) %>%rowwise() %>% 
+                      mutate(rowsum_kreis=sum(Junghennen, Legehennen, Masthuehner_und_Haehne)) %>%
+                      left_join(total_gefluegel, by="NUTS_2") %>% mutate(Prozent_abweichung=(rowsum_kreis-total_gefluegel)/rowsum_kreis*100)
 
