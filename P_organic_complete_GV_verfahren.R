@@ -810,7 +810,7 @@ if(laptob_work==TRUE) {
 # FIRST big result: anzahl der Tiere je region, "sauber" geschaetzt ueber die GV_einheiten des thuenen instituts
 #############################################################################################################################################################################################################
 
-rm(ferkel_estimate, GV_factor, GV_thuenen, GV_thuenen_bawue, GV_thuenen_bawue_gef, GV_thuenen_gef,no_masthuehner_estimate,nutztiere_bawue, nutztiere_kreise_bawue, nutztiere_RP_Bawue, RP_freiburg, RP_karlsruhe, RP_stuttgart, RP_tuebingen, test, translation)
+rm(ferkel_estimate, GV_factor, GV_thuenen, GV_thuenen_bawue, GV_thuenen_bawue_gef, GV_thuenen_gef,no_masthuehner_estimate,nutztiere_bawue, nutztiere_kreise_bawue, nutztiere_RP_Bawue, RP_freiburg, RP_karlsruhe, RP_stuttgart,test, RP_tuebingen, translation)
 
 # NEXT Block: aus dden Tierzahlen NPK ableiten, sam procedure as before
 
@@ -982,12 +982,12 @@ milchkuehe<-milchkuehe %>% mutate(Fleckvieh=cows*`Fleckvieh %`/100,
                                   Holstein_sbt=cows*`Holstein-sbt %`/100,
                                   Vorderwaelder=cows*`Vorderwälder %`/100)
 
-milchkuehe
-milchkuehe$Fleckvieh<-round(milchkuehe$Fleckvieh,digits = 0)
-milchkuehe$Braunvieh<-round(milchkuehe$Braunvieh,digits = 0)
-milchkuehe$Holstein_rbt<-round(milchkuehe$Holstein_rbt,digits = 0)
-milchkuehe$Holstein_sbt<-round(milchkuehe$Holstein_sbt,digits = 0)
-milchkuehe$Vorderwaelder<-round(milchkuehe$Vorderwaelder,digits = 0)
+#milchkuehe
+#milchkuehe$Fleckvieh<-round(milchkuehe$Fleckvieh,digits = 0)
+#milchkuehe$Braunvieh<-round(milchkuehe$Braunvieh,digits = 0)
+#milchkuehe$Holstein_rbt<-round(milchkuehe$Holstein_rbt,digits = 0)
+#milchkuehe$Holstein_sbt<-round(milchkuehe$Holstein_sbt,digits = 0)
+#milchkuehe$Vorderwaelder<-round(milchkuehe$Vorderwaelder,digits = 0)
 
 milchkuehe %>% print(n=Inf)
 # DONE! Milchkühe je Region splitted by 5 different races
@@ -1253,6 +1253,9 @@ total_N_g<-cows_PKN_g %>% mutate(total_N=No_animals_guelle*N_kg_Tier_jahr) %>%se
 total_N_s<-cows_PKN_s %>% mutate(total_N=No_animals_stroh*N_kg_Tier_jahr) %>%select(total_N) %>%
                summarize(total_N_sum=sum(total_N, na.rm=T))
 
+cows_PKN_s %>% summarize(sum(No_animals)/3)
+cows_PKN_g %>% summarize(sum(No_animals))
+
 # ohne scaling bekomme ich eine 3% abweichung, ist in Ordnung, denk ich
 # erklaerung koennte sein, dass ich vorderwaelder und rbt ueberschaetze
 
@@ -1294,6 +1297,14 @@ cows_PKN_s<-cows_PKN_s %>% mutate(N_region_kgjahr=No_animals*N_scaling_factor*ad
 
 cows_PKN_s<-cows_PKN_s %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr)
 cows_PKN_g<-cows_PKN_g %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr)
+
+
+total_N_g<-cows_PKN_g %>% summarize(total_N_sum=sum(N_region_kgjahr, na.rm=T)) 
+total_N_g
+
+total_N_s<-cows_PKN_s %>% summarize(total_N_sum=sum(N_region_kgjahr, na.rm=T)) 
+total_N_s
+
 
 cows_PKN<-rbind(cows_PKN_g, cows_PKN_s)
 cows_PKN
@@ -1346,6 +1357,8 @@ mutterkuhhaltung_s<-mutterkuhhaltung_s %>% mutate(N_region_jahr=No_animals_s*N_k
 mutterkuhhaltung_s<-mutterkuhhaltung_s %>% select(-other_cows) %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strobasiert")
 mutterkuhhaltung_g<-mutterkuhhaltung_g %>% select(-other_cows) %>% rename(No_animals=No_animals_g) %>% mutate(verfahren="guellebasiert")
 
+mutterkuhhaltung_g %>% summarize(sum(N_region_jahr))
+mutterkuhhaltung_s %>% summarize(sum(N_region_jahr))
 
 
 mutterkuhhaltung %>% summarize(total_animals=sum(other_cows, na.rm=T))
@@ -1375,7 +1388,8 @@ if(laptob_work==TRUE) {
 # Die selben shares wie vorher bei den Milchkuehen wird benutzt um die Kaelber auf verschiedene Rassen splitten 
 
 adjusted_race_proportions %>% print(n=Inf)
-kaelber<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, total_kaelber=CALV_num)
+first_estimate_num %>% summarize(sum(calves_EI, na.rm=T))
+kaelber<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, total_kaelber=calves_EI)
 
 kaelber<-kaelber %>% left_join(adjusted_race_proportions %>% select(- c(region, cows)), by="NUTS_2")
 kaelber %>% print(n=Inf)
@@ -1390,11 +1404,11 @@ kaelber<-kaelber %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*total_kaelber,
 kaelber %>% summarize(sum(total_kaelber, na.rm=T))
 
 # runden der Werte
-kaelber$Fleckvieh_kU1<- round(kaelber$Fleckvieh_kU1)
-kaelber$Braunvieh_kU1 <- round(kaelber$Braunvieh_kU1)
-kaelber$sbt_ku1<- round(kaelber$sbt_ku1)
-kaelber$rbt_ku1<- round(kaelber$rbt_ku1)
-kaelber$voerder_ku1<- round(kaelber$voerder_ku1)
+#kaelber$Fleckvieh_kU1<- round(kaelber$Fleckvieh_kU1)
+#kaelber$Braunvieh_kU1 <- round(kaelber$Braunvieh_kU1)
+#kaelber$sbt_ku1<- round(kaelber$sbt_ku1)
+#kaelber$rbt_ku1<- round(kaelber$rbt_ku1)
+#kaelber$voerder_ku1<- round(kaelber$voerder_ku1)
 
 
 
@@ -1442,18 +1456,16 @@ kaelber_voer %>% print(n=Inf)
 
 kaelber <-rbind(kaelber_F,kaelber_B, kaelber_rbt,kaelber_sbt,kaelber_voer)
 kaelber %>% summarize(sum(No_animals)/3)
-kaelber %>% filter(NUTS_2=="DE111")
-first_estimate_num %>% summarize(sum(CALV_num))
+
+
 
 kaelber<-kaelber %>% rowwise()%>%mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
                                   P205_kg_year=No_animals*P205_kg_Tier_jahr,
                                   K20_kg_year=No_animals*K20_kg_Tier_jahr)
 
 kaelber<-kaelber %>% select(NUTS_2:performance_level,Rasse=Rasse.x,Produkt, Leistungsniveau,Einstreu, N_kg_year:K20_kg_year)
-kaelber %>% print(n=Inf)
-tail(kaelber)
-kaelber %>% filter(Rasse=="voerder_ku1") %>% print(n=Inf)
 
+#checks
 kaelber %>% summarize(total_N=sum(N_kg_year, na.rm=T)) %>% summarize(sum(total_N))
 kaelber %>% summarize(total_animal_number=sum(No_animals, na.rm=T)) %>% summarize(sum(total_animal_number)/3)
 
@@ -1478,7 +1490,7 @@ kaelber
 
 
 # Faersen nach thuenen sind hier weiblich jungrinder
-jungrinder_female<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, jungrinder_female_total=HEIT_num)
+jungrinder_female<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, jungrinder_female_total=dairy_heifers)
 jungrinder_female %>% summarize(sum(jungrinder_female_total))
 
 
@@ -1496,15 +1508,16 @@ jungrinder_female<-jungrinder_female %>% select(NUTS_2, region, jungrinder_femal
 
 
 # rounding of No. animals
-jungrinder_female$Fleckvieh_kU1<- round(jungrinder_female$Fleckvieh_kU1)
-jungrinder_female$Braunvieh_kU1 <- round(jungrinder_female$Braunvieh_kU1)
-jungrinder_female$sbt_ku1<- round(jungrinder_female$sbt_ku1)
-jungrinder_female$rbt_ku1<- round(jungrinder_female$rbt_ku1)
-jungrinder_female$voerder_ku1<- round(jungrinder_female$voerder_ku1)
+#jungrinder_female$Fleckvieh_kU1<- round(jungrinder_female$Fleckvieh_kU1)
+#jungrinder_female$Braunvieh_kU1 <- round(jungrinder_female$Braunvieh_kU1)
+#jungrinder_female$sbt_ku1<- round(jungrinder_female$sbt_ku1)
+#jungrinder_female$rbt_ku1<- round(jungrinder_female$rbt_ku1)
+#jungrinder_female$voerder_ku1<- round(jungrinder_female$voerder_ku1)
 
 jungrinder_female<-jungrinder_female %>%select(-jungrinder_female_total)%>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
 jungrinder_female
 
+#split in stroh und guellebasiert
 jungrinder_female<-jungrinder_female %>% mutate(No_animals_g=0.552*No_animals,
                              No_animals_s=0.448*No_animals)
 
@@ -1556,6 +1569,7 @@ jungrinder_female_g <-rbind(jungrinder_F_g,jungrinder_B_g, jungrinder_sbt_g,jung
 jungrinder_female_g<-jungrinder_female_g %>% select(-c(No_animals, No_animals_s))
 
 
+# Doing the final checks
 jungrinder_female_s %>% summarize(sum(No_animals_s)/3)
 jungrinder_female_g %>% summarize(sum(No_animals_g))
 
@@ -1567,6 +1581,10 @@ jungrinder_female_g<-jungrinder_female_g %>% mutate(N_kg_year=No_animals_g*N_kg_
                                                     P205_kg_year=No_animals_g*P205_kg_Tier_jahr,
                                                     K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
 
+
+# amount of N je system
+jungrinder_female_g %>% summarize(sum(N_kg_year))
+jungrinder_female_s %>% summarize(sum(N_kg_year))
 
 
 jungrinder_female_s<-jungrinder_female_s %>% select(NUTS_2:performance_level,Produkt,Leistungsniveau, Einstreu, N_kg_year:K20_kg_year)
@@ -1601,7 +1619,8 @@ rm(performance_level)
 
 ######################################################################################################################################################################################################
 # Estimate for Jungrinder male - Rindermast - BULL in thuenen data
-jungrinder_male <- first_estimate_num%>% select(NUTS_2, region=Kreis_name, jungrinder_male_total=BULL_num)
+first_estimate_num %>% summarize(sum(MaleBeefCattle, na.rm=T))
+jungrinder_male <- first_estimate_num%>% select(NUTS_2, region=Kreis_name, jungrinder_male_total=MaleBeefCattle)
 jungrinder_male
 
 
@@ -1693,6 +1712,10 @@ jungrinder_mast_g<-jungrinder_mast_g %>% mutate(N_kg_year=No_animals_g*N_kg_Tier
                                                 K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
 
 
+# N je verfahren
+jungrinder_mast_s %>% summarize(sum(N_kg_year))
+jungrinder_mast_g %>% summarize(sum(N_kg_year))
+
 
 jungrinder_mast_s<-jungrinder_mast_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_s")
 jungrinder_mast_g<-jungrinder_mast_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_g")
@@ -1751,15 +1774,18 @@ milchvieh_NPK_complete<-jungrinder_mast %>% mutate(Type="BULL", performance_leve
 
 # achievement: one dataset with NPK estiamtes per region for milchvieh!
 
-
-
-# kurzeinschub: Stelle entwicklung der tierzahlen in Bawue ueber die Zeit grafisch dar
-
+##########################################################################################################################################
 # Next up: Schweinehaltung
 
 laptob_work<-TRUE
+str(first_estimate_num)
+first_estimate_num %>% summarize(sum(PIGF_num))
+first_estimate_num <- first_estimate_num %>% mutate(thunen_mastschwein=PIGF_num-n_piglets)
+first_estimate_num %>% summarize(sum(thunen_mastschwein))
+first_estimate_num %>% summarize(sum(ferkel, na.rm=T))
+first_estimate_num %>% summarize(sum(suckling_pigs, na.rm=T))
 
-pigs_bawue<- first_estimate_num %>% select(NUTS_2, region=Kreis_name, RP,"andere Schweine"=PIGF_num, Zuchtsauen=SOWS_num, Ferkel=ferkel_estimate)
+pigs_bawue<- first_estimate_num %>% select(NUTS_2, region=Kreis_name, RP,"andere Schweine"=thunen_mastschwein, Zuchtsauen=SOWS_num, Ferkel=ferkel)
 pigs_bawue
 pigs_bawue<-pigs_bawue %>% pivot_longer(cols = c(Ferkel, Zuchtsauen, `andere Schweine`), names_to = "pigs") %>% rename(No.="value")
 
@@ -1801,10 +1827,6 @@ mast_bawue_g <- pigs_bawue %>% filter(pigs=="andere Schweine") %>% select(region
 mast_bawue_s<- mast_bawue_s %>% select(-c(No., Futter))
 mast_bawue_g<- mast_bawue_g %>% select(-c(No., Futter))
 
-mast_bawue_g
-mast_bawue_s
-
-
 mast_bawue_s<-mast_bawue_s %>% mutate(N_kg_year=No_animals_s*N,
                                   P2O5_kg_year=No_animals_s*P2O5,
                                   K2O_kg_year=No_animals_s*K2O)
@@ -1821,6 +1843,9 @@ mast_bawue_s <- mast_bawue_s %>% select(-c(N,P2O5,K2O ))
 mast_bawue_g <- mast_bawue_g %>% mutate(Verfahren="guellebasiert") %>% rename(No_animals="No_animals_g")
 mast_bawue_s <- mast_bawue_s %>% mutate(Verfahren="strohabsiert") %>% rename(No_animals="No_animals_s")
 
+# check nach verfahren
+mast_bawue_g %>% summarize(sum(N_kg_year))
+mast_bawue_s %>% summarize(sum(N_kg_year))
 
 mast_bawue <- rbind(mast_bawue_s, mast_bawue_g)
 
@@ -1828,15 +1853,10 @@ mast_bawue <- rbind(mast_bawue_s, mast_bawue_g)
 mast_bawue_g %>% summarize(sum(No_animals))
 mast_bawue_s %>% summarize(sum(No_animals)/2)
 
-# total of 868,840
-791513+77327
 
-first_estimate_num %>% summarize(sum(PIGF_num))
-#868,840
 
-# check2: GEsamtsumm N und vergleich mit thuenen emission data
 mast_bawue %>% summarize(N_total=sum(N_kg_year, na.rm=T))
-#9,272,000
+#9,284,000
 
 mast_bawue_g  %>% summarize(N_total=sum(N_kg_year, na.rm=T))
 mast_bawue_s  %>% summarize(N_total=sum(N_kg_year, na.rm=T))
