@@ -579,12 +579,20 @@ mutate(SOWS_num=case_when(
   
   
 # hennen
+mutate(JUNGHENS_num=case_when(
+    
+    RP %in% "RP_Stuttgart" == TRUE   ~ (51271)*HENS_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (3488)*HENS_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (10197)*HENS_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (367640)*HENS_scale
+  )) %>%
+  
 mutate(HENS_num=case_when(
     
-    RP %in% "RP_Stuttgart" == TRUE   ~ (1339966+51271)*HENS_scale, 
-    RP %in% "RP_Karlsruhe" == TRUE   ~ (287792+3488)*HENS_scale,
-    RP %in% "RP_Freiburg" == TRUE    ~ (759335+10197)*HENS_scale,
-    RP %in% "RP_Tuebingen" == TRUE   ~ (853703+367640)*HENS_scale
+    RP %in% "RP_Stuttgart" == TRUE   ~ (1339966)*HENS_scale, 
+    RP %in% "RP_Karlsruhe" == TRUE   ~ (287792)*HENS_scale,
+    RP %in% "RP_Freiburg" == TRUE    ~ (759335)*HENS_scale,
+    RP %in% "RP_Tuebingen" == TRUE   ~ (853703)*HENS_scale
   )) %>%
 #mastgefluegel, for now only masthuehner und haehne, aber koenten auch puten, gaense, enten mitreinschieben
 mutate(POUF_num=case_when(
@@ -1919,6 +1927,7 @@ ferkel_g$N <- as.numeric(ferkel_g$N)
 ferkel_g$P2O5 <- as.numeric(ferkel_g$P2O5)
 ferkel_g$K2O <- as.numeric(ferkel_g$K2O)
 
+
 ferkel<-rbind(ferkel_s %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strohbasiert"), ferkel_g %>% rename(No_animals=No_animals_g) %>% mutate(verfahren="guellebasiert"))
 
 ferkel_NPK<-ferkel %>% select(NUTS_2:pigs, No_animals,verfahren, Leistungsniveau, Einstreu=`Einstreu kg FM/(TP · d)`, Produkt, N:K2O) %>% mutate(N_kg_year=No_animals*N,
@@ -1930,12 +1939,6 @@ ferkel_NPK %>% print(n=Inf)
 # Doing the checks
 ferkel_NPK %>% filter(verfahren=="guellebasiert") %>% summarize(sum(No_animals, na.rm=T), sum(N_kg_year,na.rm=T))
 ferkel_NPK %>% filter(verfahren=="strohbasiert") %>% summarize(sum(No_animals, na.rm=T)/3, sum(N_kg_year,na.rm=T))
-
-#animal_number
-607896+59388
-
-# estimate total N
-1945266+302880
 
 
 # DONE schaetzung NPK for ferkeleraufzucht
@@ -2047,6 +2050,27 @@ performance_level_hens_choice <- performance_level_hens %>% mutate(Type="HENS") 
 performance_level_hens_choice<- performance_level_hens_choice[c(1:2),]
 performance_level_hens_choice
 
+# nach thuenen emission inventory ist das way to high, ich mache hier eine anpassung beim ersten minus 23.5% beim zweiten - 40%
+performance_level_hens_choice<-performance_level_hens_choice %>%
+  mutate(N= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.81-(0.81*0.2353457),
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.48-(0.48*0.3971458)
+  ))
+
+performance_level_hens_choice<-performance_level_hens_choice %>%
+  mutate(P2O5= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.81-(0.81*0.2353457)-0.4,
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.48-(0.48*0.3971458)-0.07
+  ))
+
+performance_level_hens_choice<-performance_level_hens_choice %>%
+  mutate(K2O= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.81-(0.81*0.2353457)-0.45,
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.48-(0.48*0.3971458)-0.12
+  ))
+
+
+
 ## Estimate NPK for hens in BaWue 2020
 hens<- hens %>% left_join(performance_level_hens_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type), by="Type") 
 
@@ -2065,16 +2089,12 @@ hens_NPK<-hens_NPK %>% rename(No_animals=HENS_num)
 first_estimate_num %>% summarize(sum(HENS_num))
 hens_NPK %>% summarize(sum(No_animals, na.rm=T)/2)
 
-# aus erhebung 
-432596+3240796
+
 ## Total numbers are the same
 
 #Total N
 hens_NPK %>%  summarize(sum(N_kg_year, na.rm=T))
 hens_NPK %>% group_by(Produkt) %>%  summarize(sum(N_kg_year, na.rm=T))
-
-
-
 
 
 
@@ -2087,8 +2107,63 @@ if(laptob_work==TRUE) {
   
 }  
 
+# Berechnung fuer Junghennen
+
+str(first_estimate_num)
+
+JUNGHENS <- first_estimate_num %>% select(NUTS_2, region=Kreis_name, JUNGHENS_num) %>% mutate(Type="JUNGHENS")
+JUNGHENS
+
+performance_level_JUNGHENS <- read_excel("fertillizer_sang.xlsx",sheet = "11.6_Legehennen", skip=2 )
+performance_level_JUNGHENS
+
+# choose prod verfahren 1, Legehennen 19.5kg Eimasse
+performance_level_JUNGHENS_choice <- performance_level_JUNGHENS %>% mutate(Type="JUNGHENS") %>% filter(`Einstreu kg FM/(TP · d)`=="0.13")
+performance_level_JUNGHENS_choice<- performance_level_JUNGHENS_choice[c(1:2),]
+performance_level_JUNGHENS_choice
+
+# nach thuenen emission inventory ist das way to high, ich mache hier eine anpassung beim ersten minus 23.5% beim zweiten - 40%
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+  mutate(N= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.3
+  ))
+
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+  mutate(P2O5= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.18
+  ))
+
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+  mutate(K2O= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 0.15
+  ))
 
 
+
+## Estimate NPK for hens in BaWue 2020
+JUNGHENS<- JUNGHENS %>% left_join(performance_level_JUNGHENS_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type), by="Type") 
+
+JUNGHENS$N <- as.numeric(JUNGHENS$N)
+JUNGHENS$P2O5 <- as.numeric(JUNGHENS$P2O5)
+JUNGHENS$K2O <- as.numeric(JUNGHENS$K2O)
+
+JUNGHENS_NPK<-JUNGHENS %>% select(NUTS_2:Type,Einstreu,Leistungsniveau,Produkt="Wirtshaftsdüngerart", N:K2O) %>% mutate(N_kg_year=JUNGHENS_num*N,
+                                                                                                                P2O5_kg_year=JUNGHENS_num*P2O5,
+                                                                                                                K2O_kg_year=JUNGHENS_num*K2O) %>% 
+  select(-c(N,P2O5,K2O ))
+JUNGHENS_NPK<-JUNGHENS_NPK %>% rename(No_animals=JUNGHENS_num)
+
+# Do the basic checks
+# animal number
+first_estimate_num %>% summarize(sum(JUNGHENS_num))
+JUNGHENS_NPK %>% summarize(sum(No_animals, na.rm=T))
+
+
+## Total numbers are the same
+
+#Total N
+JUNGHENS_NPK %>%  summarize(sum(N_kg_year, na.rm=T))
+JUNGHENS_NPK %>% group_by(Produkt) %>%  summarize(sum(N_kg_year, na.rm=T))
 
 #################################################################################
 # estimation for masthuehner, note: auch puten, enten, gaense stekct hier drin - uebersetzt in huehner, war hier nicht besser moeglich
