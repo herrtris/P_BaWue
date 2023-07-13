@@ -17,7 +17,7 @@ library(tidyverse)
 # several elements are important to estimate the fertilizer amount per NUTS_2
 
 laptob_work <- TRUE
-
+options(scipen = 999)
 # 1. Task one date set with the amount of animals per RP region -  this data is complete and will later on be the basis for estimation, based on the GV units of the Thuenen institute
 
 #3. The amount of cows in the region is relevant of course, how many cows per NUTS2 are there producing N, P, K
@@ -626,7 +626,7 @@ first_estimate_num <-first_estimate_num %>% mutate(MaleBeefCattle= CALV_num*((1-
 
 nutztiere_kreise_bawue$ferkel <- as.numeric(nutztiere_kreise_bawue$ferkel)
 
-nutztiere_kreise_bawue %>% filter(RP=="RP_Stuttgart") %>% select(ferkel)
+#nutztiere_kreise_bawue %>% filter(RP=="RP_Stuttgart") %>% select(ferkel)
 
 nutztiere_kreise_bawue<-nutztiere_kreise_bawue  %>% mutate(RP=case_when(
   
@@ -657,9 +657,16 @@ ferkel_estimate<-nutztiere_kreise_bawue %>% select(NUTS_2, region, RP,ferkel) %>
 first_estimate_num <-first_estimate_num %>% left_join(ferkel_estimate%>% select(NUTS_2, ferkel_estimate), by="NUTS_2")
 
 ### schetzung fuer suckling pigs von ferkel abziehen
-first_estimate_num <- first_estimate_num %>% mutate(suckling_pigs=0.5771*ferkel_estimate) %>% mutate(ferkel=ferkel_estimate-suckling_pigs)
+# piglets abgezogen von mastschweinen
+first_estimate_num <- first_estimate_num  %>% mutate(n_piglets=0.072199*PIGF_num) 
+
+# suckling pigs abezogen von ferkel und aufschlag aus npiglets
+first_estimate_num <- first_estimate_num %>% mutate(suckling_pigs=0.5771*as.numeric(ferkel_estimate)) %>% mutate(ferkel=ferkel_estimate-suckling_pigs+n_piglets)
 first_estimate_num %>% summarize(sum(ferkel, na.rm=T))
 
+first_estimate_num %>% select(PIGF_num) %>% mutate(n_piglets=0.072199*PIGF_num) %>% summarize(sum(n_piglets, na.rm=T))
+
+first_estimate_num %>% mutate(PIGF_T =PIGF_num-n_piglets) %>% summarize(sum(PIGF_T))
 
 options(scipen = 999)
 
