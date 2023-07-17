@@ -2202,10 +2202,6 @@ masth_NPK %>% summarize(total_N=sum(N_kg_year, na.rm=T))
 masth_NPK %>% summarize(total_animals=sum(No_animals)/2)
 
 
-
-
-
-
 # DONE schaetzung NPK for ferkeleraufzucht
 if(laptob_work==TRUE) {
   write_xlsx(x=masth_NPK, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/masth_NPK.xlsx", col_names = TRUE)
@@ -2214,6 +2210,91 @@ if(laptob_work==TRUE) {
   write_xlsx(x=masth_NPK, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/masth_NPK.xlsx", col_names = TRUE)
   
 }  
+
+############################################################################################################################################################
+## add the new categories e.g. female beef cattle, basically repeat bull 
+str(first_estimate_num)
+
+######################################################################################################################################################################################################
+# Estimate for Jungrinder male - Rindermast - BULL in thuenen data
+first_estimate_num %>% summarize(sum(female_beef_cattle, na.rm=T))
+fbeef <- first_estimate_num%>% select(NUTS_2, region=Kreis_name, female_beef_cattle)
+fbeef
+
+# strobasiert und guellebasiert, do the split
+fbeef <- fbeef %>% mutate(No_animals_s=female_beef_cattle*0.552,
+                          No_animals_g=female_beef_cattle*0.448)
+
+fbeef#
+
+
+# performance levels from KTBL data
+performance_level_rindermast <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "6.6_Rindermast" )
+performance_level_rindermast
+
+performance_level_rindermast<-performance_level_rindermast %>% filter(Leistungsniveau== "Fleckvieh 135bis650kg LM, 15.5 Monate")
+performance_level_rindermast<-performance_level_rindermast %>% rename(verfahren=performance_level)
+
+# create joining link
+fbeef<-fbeef %>% mutate(verfahren=1)
+
+# choose amount of einstreu nach verfahren
+jungrinder_mastfemale_s <- fbeef %>% select(NUTS_2:region, No_animals_s, verfahren) %>% left_join(performance_level_rindermast %>% filter(Einstreu==2), by="verfahren")
+jungrinder_mastfemale_g <- fbeef %>% select(NUTS_2:region, No_animals_g, verfahren) %>% left_join(performance_level_rindermast %>% filter(Einstreu==0), by="verfahren")
+
+
+
+jungrinder_mastfemale_s<-jungrinder_mastfemale_s %>% mutate(N_kg_year=No_animals_s*N_kg_Tier_jahr,
+                                                P205_kg_year=No_animals_s*P205_kg_Tier_jahr,
+                                                K20_kg_year=No_animals_s*K20_kg_Tier_jahr)
+
+
+jungrinder_mastfemale_g<-jungrinder_mastfemale_g %>% mutate(N_kg_year=No_animals_g*N_kg_Tier_jahr,
+                                                P205_kg_year=No_animals_g*P205_kg_Tier_jahr,
+                                                K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
+
+
+# N je verfahren
+jungrinder_mastfemale_s %>% summarize(sum(N_kg_year))
+jungrinder_mastfemale_g %>% summarize(sum(N_kg_year))
+
+
+jungrinder_mastfemale_s<-jungrinder_mastfemale_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_s")
+jungrinder_mastfemale_g<-jungrinder_mastfemale_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_g")
+
+
+jungrinder_mastfemale<-rbind(jungrinder_mastfemale_s, jungrinder_mastfemale_g)
+
+jungrinder_mastfemale
+
+str(jungrinder_mastfemale)
+
+jungrinder_mastfemale %>% summarize(sum(N_kg_year))
+
+
+# reality check
+
+# DONE schaetzung NPK je Rasse je kreis fuer jungrinder female
+if(laptob_work==TRUE) {
+  write_xlsx(x=jungrinder_mastfemale, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_mastfemale_PKN.xlsx", col_names = TRUE)
+  
+} else {
+  write_xlsx(x=jungrinder_mastfemale, path = "C:/Users/Tristan Herrmann/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/jungrinder_mastfemale_PKN.xlsx", col_names = TRUE)
+  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ############################################################################################################################################################
 ## create one final dataset with all animals (zumdinest die fuer die ich ktbl data hab)
@@ -2228,7 +2309,9 @@ NPK_estimate_bawue<-bawue_milchvieh_pigs_complete %>%
           rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year")) %>%
 
     rbind(masth_NPK %>%  mutate(Rasse="mastgefluegel_estimated_in_masth", performance_level=NA, verfahren="strohbasiert") %>%
-          rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year"))
+          rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year"))%>%
+  
+    rbind(jungrinder_mastfemale %>% mutate(Type="Female_BEEF_cattle", performance_level=NA, Rasse="Fleckvieh"))
 
 
 
