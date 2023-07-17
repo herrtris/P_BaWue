@@ -1402,21 +1402,21 @@ if(laptob_work==TRUE) {
 # moment mal.. habe ja auch bei den Kaelberndaten verschiedene Rassen, dass ist auch bei der Mast! sehr relevant!
 # Die selben shares wie vorher bei den Milchkuehen wird benutzt um die Kaelber auf verschiedene Rassen splitten 
 
-adjusted_race_proportions %>% print(n=Inf)
+#adjusted_race_proportions %>% print(n=Inf)
 first_estimate_num %>% summarize(sum(calves_EI, na.rm=T))
 kaelber<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, total_kaelber=calves_EI)
 
-kaelber<-kaelber %>% left_join(adjusted_race_proportions %>% select(- c(region, cows)), by="NUTS_2")
-kaelber %>% print(n=Inf)
-
-kaelber<-kaelber %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*total_kaelber,
-                                  Braunvieh_kU1=`Braunvieh %`/100*total_kaelber,
-                                  sbt_ku1=`Holstein-sbt %`/100*total_kaelber,
-                                  rbt_ku1=`Holsteins-Rbt`/100*total_kaelber,
-                                  voerder_ku1=`Vorderwälder %`/100*total_kaelber) %>% 
-  select(NUTS_2, region, total_kaelber,Fleckvieh_kU1:voerder_ku1)
-
-kaelber %>% summarize(sum(total_kaelber, na.rm=T))
+# kaelber<-kaelber %>% left_join(adjusted_race_proportions %>% select(- c(region, cows)), by="NUTS_2")
+# kaelber %>% print(n=Inf)
+# 
+# kaelber<-kaelber %>% mutate(Fleckvieh_kU1=`Fleckvieh %`/100*total_kaelber,
+#                                   Braunvieh_kU1=`Braunvieh %`/100*total_kaelber,
+#                                   sbt_ku1=`Holstein-sbt %`/100*total_kaelber,
+#                                   rbt_ku1=`Holsteins-Rbt`/100*total_kaelber,
+#                                   voerder_ku1=`Vorderwälder %`/100*total_kaelber) %>% 
+#   select(NUTS_2, region, total_kaelber,Fleckvieh_kU1:voerder_ku1)
+# 
+# kaelber %>% summarize(sum(total_kaelber, na.rm=T))
 
 # runden der Werte
 #kaelber$Fleckvieh_kU1<- round(kaelber$Fleckvieh_kU1)
@@ -1427,62 +1427,87 @@ kaelber %>% summarize(sum(total_kaelber, na.rm=T))
 
 
 
-kaelber<-kaelber %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
-kaelber
-
-# getting the performance levels from milk production per area
-kaelber_F<-kaelber%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
-                                                                          select(NUTS_2, performance_level), by="NUTS_2")
-
-kaelber_B<-kaelber%>% filter(Rasse=="Braunvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Braunvieh") %>%
-                                                                          select(NUTS_2, performance_level), by="NUTS_2")
-
-kaelber_sbt<-kaelber%>% filter(Rasse=="sbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_sbt") %>%
-                                                                      select(NUTS_2, performance_level), by="NUTS_2")
-
-kaelber_rbt<-kaelber%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_rbt") %>%
-                                                                      select(NUTS_2, performance_level), by="NUTS_2")
-
-
-kaelber_voer<-kaelber%>% filter(Rasse=="voerder_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Vorderwaelder") %>%
-                                                                           select(NUTS_2, performance_level), by="NUTS_2")
-
-kaelber_B %>% summarize(sum(No_animals))
-kaelber_F %>% summarize(sum(No_animals))
-kaelber_sbt %>% summarize(sum(No_animals))
-kaelber_rbt %>% summarize(sum(No_animals))
-kaelber_voer %>% summarize(sum(No_animals))
+# kaelber<-kaelber %>% pivot_longer(c(Fleckvieh_kU1,Braunvieh_kU1,sbt_ku1,rbt_ku1, voerder_ku1)) %>% rename(Rasse="name", No_animals="value")
+# kaelber
+# 
+# # getting the performance levels from milk production per area
+# kaelber_F<-kaelber%>% filter(Rasse=="Fleckvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Fleckvieh") %>%
+#                                                                           select(NUTS_2, performance_level), by="NUTS_2")
+# 
+# kaelber_B<-kaelber%>% filter(Rasse=="Braunvieh_kU1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Braunvieh") %>%
+#                                                                           select(NUTS_2, performance_level), by="NUTS_2")
+# 
+# kaelber_sbt<-kaelber%>% filter(Rasse=="sbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_sbt") %>%
+#                                                                       select(NUTS_2, performance_level), by="NUTS_2")
+# 
+# kaelber_rbt<-kaelber%>% filter(Rasse=="rbt_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Holstein_rbt") %>%
+#                                                                       select(NUTS_2, performance_level), by="NUTS_2")
+# 
+# 
+# kaelber_voer<-kaelber%>% filter(Rasse=="voerder_ku1") %>% left_join(NUTS_2_milk_performance_level%>%filter(Race=="Vorderwaelder") %>%
+#                                                                            select(NUTS_2, performance_level), by="NUTS_2")
+# 
+# kaelber_B %>% summarize(sum(No_animals))
+# kaelber_F %>% summarize(sum(No_animals))
+# kaelber_sbt %>% summarize(sum(No_animals))
+# kaelber_rbt %>% summarize(sum(No_animals))
+# kaelber_voer %>% summarize(sum(No_animals))
 
 # performance level beziehen sich auf den Zuwachs Fleckvieh 90, 95, 100kg Zuwachs; SBT_HF 80, 85, 90 kg Zuwachs
-performance_level_kaelber <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "4.6_Kaelberaufzucht" )
-performance_level_kaelber
-tail(performance_level_kaelber)
-#performance_level_kaelber %>% filter(Rasse=="voerder_ku1") %>% print(n=Inf)
-
-kaelber_F<-kaelber_F %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh"), by="performance_level")
-
-
-kaelber_B<-kaelber_B %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") , by="performance_level")
-kaelber_sbt<-kaelber_sbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") , by="performance_level")
-kaelber_rbt<-kaelber_rbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") , by="performance_level")
-kaelber_voer<-kaelber_voer %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh")  , by="performance_level")
-
-kaelber_voer %>% print(n=Inf)
-
-kaelber <-rbind(kaelber_F,kaelber_B, kaelber_rbt,kaelber_sbt,kaelber_voer)
-kaelber %>% summarize(sum(No_animals)/3)
 
 
 
-kaelber<-kaelber %>% rowwise()%>%mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
-                                  P205_kg_year=No_animals*P205_kg_Tier_jahr,
-                                  K20_kg_year=No_animals*K20_kg_Tier_jahr)
+#ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
+kaelber<-kaelber %>% mutate(N_Tier=16.6, P_Tier=6.4, K_Tier=15.3) %>% mutate(Leistungsniveau="Kaelberaufzucht16wochen")
 
-kaelber<-kaelber %>% select(NUTS_2:performance_level,Rasse=Rasse.x,Produkt, Leistungsniveau,Einstreu, N_kg_year:K20_kg_year)
+kaelber<-kaelber %>% mutate(N_kg_year=total_kaelber*N_Tier,
+                          P205_kg_year=total_kaelber*P_Tier,
+                          K20_kg_year=total_kaelber*K_Tier)
+
+
+kaelber <- kaelber %>% select(-c(N_Tier:K_Tier))
+kaelber
+
+kaelber %>% summarize(sum(N_kg_year))
+kaelber %>% summarise(sum(total_kaelber))
+
+
+
+
+
+
+
+
+
+# performance_level_kaelber <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "4.6_Kaelberaufzucht" )
+# performance_level_kaelber
+# tail(performance_level_kaelber)
+# #performance_level_kaelber %>% filter(Rasse=="voerder_ku1") %>% print(n=Inf)
+
+# kaelber_F<-kaelber_F %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh"), by="performance_level")
+# 
+# 
+# kaelber_B<-kaelber_B %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh") , by="performance_level")
+# kaelber_sbt<-kaelber_sbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") , by="performance_level")
+# kaelber_rbt<-kaelber_rbt %>% left_join(performance_level_kaelber%>% filter(Rasse=="Sbt_HF") , by="performance_level")
+# kaelber_voer<-kaelber_voer %>% left_join(performance_level_kaelber%>% filter(Rasse=="Fleckvieh")  , by="performance_level")
+# 
+# kaelber_voer %>% print(n=Inf)
+# 
+# kaelber <-rbind(kaelber_F,kaelber_B, kaelber_rbt,kaelber_sbt,kaelber_voer)
+# kaelber %>% summarize(sum(No_animals)/3)
+
+
+
+# kaelber<-kaelber %>% rowwise()%>%mutate(N_kg_year=No_animals*N_kg_Tier_jahr,
+#                                   P205_kg_year=No_animals*P205_kg_Tier_jahr,
+#                                   K20_kg_year=No_animals*K20_kg_Tier_jahr)
+# 
+# kaelber<-kaelber %>% select(NUTS_2:performance_level,Rasse=Rasse.x,Produkt, Leistungsniveau,Einstreu, N_kg_year:K20_kg_year)
 
 #checks
-kaelber %>% summarize(total_N=sum(N_kg_year, na.rm=T)) %>% summarize(sum(total_N))
-kaelber %>% summarize(total_animal_number=sum(No_animals, na.rm=T)) %>% summarize(sum(total_animal_number)/3)
+# kaelber %>% summarize(total_N=sum(N_kg_year, na.rm=T)) %>% summarize(sum(total_N))
+# kaelber %>% summarize(total_animal_number=sum(No_animals, na.rm=T)) %>% summarize(sum(total_animal_number)/3)
 
 
 # DONE schaetzung NPK je Rasse je kreis fuer Kaelber
@@ -1779,8 +1804,10 @@ rm(list = ls()[!ls() %in% c("jungrinder_mast", "jungrinder_female", "kaelber","m
 # Is it possible to put these datatest togehter?
 milchvieh_NPK_complete<-jungrinder_mast %>% mutate(Type="BULL", performance_level=NA, Rasse="Fleckvieh") %>%
                           rbind(jungrinder_female %>% mutate(Type="HEIT"))%>%
-                          rbind(kaelber %>% select(-total_kaelber) %>% select(NUTS_2:K20_kg_year) %>% mutate(Type="CALV", verfahren="strohbasiert"))%>%
-                          rbind(mutterkuhhaltung  %>%rename(Einstreu= `Einstreu kg FM/(Tier · d)`) %>% 
+                          rbind(kaelber %>% rename(No_animals="total_kaelber") %>% select(NUTS_2:K20_kg_year) %>% 
+                                  mutate(Type="CALV", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))%>%
+  
+  rbind(mutterkuhhaltung  %>%rename(Einstreu= `Einstreu kg FM/(Tier · d)`) %>% 
                                 mutate(performance_level=NA, Type="SCOW", Rasse=NA) %>% 
                                 rename(N_kg_year="N_region_jahr", P205_kg_year="P205_region_Jahr",K20_kg_year="K20_regio_jahr")) %>%
                           rbind(cows_PKN %>% select(-adjusted_avg_milk_production)%>% 
@@ -2316,13 +2343,93 @@ pferde %>% summarize(sum(N_kg_year))
 pferde %>% summarise(sum(total_pferde))
 
 
+#### schafe, getrennt nach laemmer und schafe/boecke
+str(first_estimate_num)
 
-#### schafe
+lamb<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, lambs,boecke_hammel_other, total_milch_mutterschafe)
+lamb <-lamb %>% mutate(schafe=as.numeric(boecke_hammel_other)+as.numeric(total_milch_mutterschafe))
+lamb
+
+lamb %>% summarize(sum(schafe, na.rm=T))
+
+# strobasiert und guellebasiert, do the split
+lamb<-lamb %>% mutate(verfahren="strohbasiert")
+
+lamb <- lamb %>% mutate(lambs=as.numeric(lambs)+((20024/167218))*schafe) 
+lamb %>% summarize(sum(lambs, na.rm = T))
+
+
+#Daten von LTZ Augustenberg 
+lamb<-lamb %>% mutate(N_Tier=5.9, P_Tier=1.9, K_Tier=6.5) %>% mutate(Leistungsniveau="Laemmer_bis1Jahr,konv")
+
+lamb$lambs <- as.numeric(lamb$lambs)
+
+lamb<-lamb %>% mutate(N_kg_year=lambs*N_Tier,
+                          P205_kg_year=lambs*P_Tier,
+                          K20_kg_year=lambs*K_Tier)
+
+
+lamb <- lamb %>% select(-c(N_Tier:K_Tier))
+lamb
+
+lamb %>% summarize(sum(N_kg_year, na.rm=T))
+lamb %>% summarise(sum(lambs, na.rm=T))
+
+######################################################################################################################
+### mutterscahfe und andere
+str(first_estimate_num)
+
+mutterschafe<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, boecke_hammel_other, total_milch_mutterschafe)
+mutterschafe <-mutterschafe %>% mutate(schafe=as.numeric(boecke_hammel_other)+as.numeric(total_milch_mutterschafe))
+
+# strobasiert und guellebasiert, do the split
+mutterschafe<-mutterschafe %>% mutate(verfahren="strohbasiert")
+
+#Daten von LTZ Augustenberg
+mutterschafe<-mutterschafe %>% mutate(N_Tier=14.2, P_Tier=4.3, K_Tier=15.5) %>% mutate(Leistungsniveau="mutterschafe_ohneLamm_andereschafe_konv")
+
+
+## anpassung thuenen von lambs zu schafe, zuschlag 20,024 tiere
+1-(155209/167218)
+mutterschafe <- mutterschafe %>% mutate(schafe=schafe-(1-(155209/167218))*schafe) 
+
+mutterschafe<-mutterschafe %>% mutate(N_kg_year=schafe*N_Tier,
+                      P205_kg_year=schafe*P_Tier,
+                      K20_kg_year=schafe*K_Tier)
+
+
+mutterschafe <- mutterschafe %>% select(-c(N_Tier:K_Tier))
+mutterschafe
+
+mutterschafe %>% summarize(sum(N_kg_year, na.rm=T))
+mutterschafe %>% summarise(sum(schafe, na.rm=T))
 
 
 #### ziegen
 
+str(first_estimate_num)
 
+ziegen<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, total_ziegen)
+ziegen
+
+# strobasiert und guellebasiert, do the split
+ziegen<-ziegen %>% mutate(verfahren="strohbasiert")
+
+#ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
+ziegen<-ziegen %>% mutate(N_Tier=15.2, P_Tier=5.7, K_Tier=18) %>% mutate(Leistungsniveau="Mutterziege(1.5laemmer)800kgmilch,andereziegen")
+
+ziegen$total_ziegen<- as.numeric(ziegen$total_ziegen)
+
+ziegen<-ziegen %>% mutate(N_kg_year=total_ziegen*N_Tier,
+                          P205_kg_year=total_ziegen*P_Tier,
+                          K20_kg_year=total_ziegen*K_Tier)
+
+
+ziegen <- ziegen %>% select(-c(N_Tier:K_Tier))
+ziegen
+
+ziegen %>% summarize(sum(N_kg_year, na.rm = T))
+ziegen %>% summarise(sum(total_ziegen, na.rm=T))
 
 
 
@@ -2342,6 +2449,8 @@ bawue_milchvieh_pigs_complete
 hens_NPK
 masth_NPK
 
+# add ziegen, mutterschafe, lamb, pferde
+
 NPK_estimate_bawue<-bawue_milchvieh_pigs_complete %>%
     rbind(hens_NPK  %>% mutate(Rasse="Hennen", performance_level=NA, verfahren="strohbasiert") %>%
           rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year")) %>%
@@ -2349,8 +2458,19 @@ NPK_estimate_bawue<-bawue_milchvieh_pigs_complete %>%
     rbind(masth_NPK %>%  mutate(Rasse="mastgefluegel_estimated_in_masth", performance_level=NA, verfahren="strohbasiert") %>%
           rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year"))%>%
   
-    rbind(jungrinder_mastfemale %>% mutate(Type="Female_BEEF_cattle", performance_level=NA, Rasse="Fleckvieh"))
+    rbind(jungrinder_mastfemale %>% mutate(Type="Female_BEEF_cattle", performance_level=NA, Rasse="Fleckvieh"))%>%
 
+    rbind(pferde %>% rename(No_animals="total_pferde") %>% select(NUTS_2:K20_kg_year) %>% 
+        mutate(Type="HORSE", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Pferd", performance_level=NA))%>%
+  
+  rbind(ziegen %>% rename(No_animals="total_ziegen") %>% select(NUTS_2:K20_kg_year) %>% 
+          mutate(Type="ZIEG", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse=NA, performance_level=NA)) %>%
+  
+  rbind(lamb %>% rename(No_animals="lambs") %>% select(NUTS_2:K20_kg_year) %>% 
+          mutate(Type="LAMB", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="LAMB", performance_level=NA) %>% select(-c(boecke_hammel_other:schafe))) %>%
+
+  rbind(mutterschafe %>% rename(No_animals="schafe") %>% select(NUTS_2 ,region, No_animals:K20_kg_year) %>% 
+          mutate(Type="CALV", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))
 
 
 if(laptob_work==TRUE) {
