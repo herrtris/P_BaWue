@@ -607,6 +607,13 @@ select(RP:allYEAR, DCOW_num:POUF_num)
 
 first_estimate_num
 
+# Fuege schafe, Pferde und Ziegen zum estimate dazu, danach ist aber sense
+nutztiere_kreise_bawue %>% str()
+
+first_estimate_num <- first_estimate_num %>%
+left_join(nutztiere_kreise_bawue %>% select(NUTS_2 , total_pferde, total_ziegen, total_milch_mutterschafe, lambs=schafe_U1, boecke_hammel_other), by="NUTS_2") 
+
+
 #############################################################################################################################################
 # Do the estimations in accordance with thuenen, emission inventroy
 
@@ -2283,6 +2290,37 @@ if(laptob_work==TRUE) {
   
 }  
 
+########################################################################################################################
+##### pferde
+str(first_estimate_num)
+
+pferde<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, total_pferde)
+pferde
+
+# strobasiert und guellebasiert, do the split
+pferde<-pferde %>% mutate(verfahren="strohbasiert")
+
+#ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
+pferde<-pferde %>% mutate(N_Tier=49.2143, P_Tier=23.4-1.8857, K_Tier=57.5-1.8857) %>% mutate(Leistungsniveau="500-600kgLG,leichtearbeit")
+
+
+pferde<-pferde %>% mutate(N_kg_year=total_pferde*N_Tier,
+                          P205_kg_year=total_pferde*P_Tier,
+                          K20_kg_year=total_pferde*K_Tier)
+
+
+pferde <- pferde %>% select(-c(N_Tier:K_Tier))
+pferde
+
+pferde %>% summarize(sum(N_kg_year))
+pferde %>% summarise(sum(total_pferde))
+
+
+
+#### schafe
+
+
+#### ziegen
 
 
 
