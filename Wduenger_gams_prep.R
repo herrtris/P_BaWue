@@ -34,7 +34,26 @@ if(laptob_work==TRUE) {
 }
 
 ## Read in DuengerDAten
+wduenger <- read_excel("NPK_estimate_bawue.xlsx")
+wduenger
 
+
+##Okay erster Versuch. nehme das Basis-rgionsmodell aus dem Modul - es representiert die Region Stuttgart, es gibt dor nur Milchkuehe DCOW
+
+stuttgart_DCOW <- wduenger %>% filter(NUTS_2=="DE111" & Type=="DCOW") %>% filter(!No_animals==0)
+stuttgart_DCOW
+
+# Gesamtzahl Tiere in DE111, ca. 390 Kuehe verschiedener Rasse in Stuttgart
+stuttgart_DCOW %>% filter(verfahren=="strohbasiert") %>% summarize(sum(No_animals, na.rm=T)/3)
+stuttgart_DCOW %>% filter(verfahren=="guellebasiert") %>% summarize(sum(No_animals, na.rm=T))
+
+# Zur weiteren Vereinfachung mache ich einen group_by produkt. Kann ich später wieder komplizierter machen
+duenger_vereinfacht <- stuttgart_DCOW %>%select(NUTS_2, Produkt, N_kg_year:K20_kg_year)%>% group_by(Produkt) %>% summarize(across(c(N_kg_year,P205_kg_year,K20_kg_year), sum))
+duenger_vereinfacht
+
+stuttgart_DCOW %>%select(NUTS_2, Produkt, N_kg_year)%>% group_by(Produkt, NUTS_2) %>% summarize(sum(N_kg_year))
+stuttgart_DCOW %>%select(NUTS_2, Produkt, P205_kg_year)%>% group_by(Produkt, NUTS_2) %>% summarize(sum(P205_kg_year))
+stuttgart_DCOW %>%select(NUTS_2, Produkt, K20_kg_year)%>% group_by(Produkt, NUTS_2) %>% summarize(sum(K20_kg_year))
 
 
 
