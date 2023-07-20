@@ -1373,7 +1373,7 @@ mutterkuhhaltung_s<-mutterkuhhaltung_s %>% mutate(N_region_jahr=No_animals_s*N_k
                                                   P205_region_Jahr=No_animals_s*P205_kg_Tier_jahr,
                                                   K20_regio_jahr=No_animals_s*K20_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
 
-mutterkuhhaltung_s<-mutterkuhhaltung_s %>% select(-other_cows) %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strobasiert")
+mutterkuhhaltung_s<-mutterkuhhaltung_s %>% select(-other_cows) %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strohbasiert")
 mutterkuhhaltung_g<-mutterkuhhaltung_g %>% select(-other_cows) %>% rename(No_animals=No_animals_g) %>% mutate(verfahren="guellebasiert")
 
 mutterkuhhaltung_g %>% summarize(sum(N_region_jahr))
@@ -1889,7 +1889,7 @@ mast_bawue_g <- mast_bawue_g %>% select(-c(N,P2O5,K2O ))
 mast_bawue_s <- mast_bawue_s %>% select(-c(N,P2O5,K2O ))
 
 mast_bawue_g <- mast_bawue_g %>% mutate(Verfahren="guellebasiert") %>% rename(No_animals="No_animals_g")
-mast_bawue_s <- mast_bawue_s %>% mutate(Verfahren="strohabsiert") %>% rename(No_animals="No_animals_s")
+mast_bawue_s <- mast_bawue_s %>% mutate(Verfahren="strohbasiert") %>% rename(No_animals="No_animals_s")
 
 # check nach verfahren
 mast_bawue_g %>% summarize(sum(N_kg_year))
@@ -2010,7 +2010,7 @@ performance_level_g <- performance_level_ferkelerzeugung %>% filter(`Einstreu kg
 zuchtsauen<-pigs_bawue %>% filter(pigs=="Zuchtsauen")
 zuchtsauen
 
-# split in guelee und strobasiert
+# split in guelee und strohbasiert
 zuchtsauen_s<- zuchtsauen %>% mutate(No_animals_s=No.*0.146)
 zuchtsauen_g<- zuchtsauen %>% mutate(No_animals_g=No.*0.854)
 
@@ -2261,7 +2261,7 @@ first_estimate_num %>% summarize(sum(female_beef_cattle, na.rm=T))
 fbeef <- first_estimate_num%>% select(NUTS_2, region=Kreis_name, female_beef_cattle)
 fbeef
 
-# strobasiert und guellebasiert, do the split
+# strohbasiert und guellebasiert, do the split
 fbeef <- fbeef %>% mutate(No_animals_s=female_beef_cattle*0.552,
                           No_animals_g=female_beef_cattle*0.448)
 
@@ -2330,7 +2330,7 @@ str(first_estimate_num)
 pferde<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, total_pferde)
 pferde
 
-# strobasiert und guellebasiert, do the split
+# strohbasiert und guellebasiert, do the split
 pferde<-pferde %>% mutate(verfahren="strohbasiert")
 
 #ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
@@ -2358,7 +2358,7 @@ lamb
 
 lamb %>% summarize(sum(schafe, na.rm=T))
 
-# strobasiert und guellebasiert, do the split
+# strohbasiert und guellebasiert, do the split
 lamb<-lamb %>% mutate(verfahren="strohbasiert")
 
 lamb <- lamb %>% mutate(lambs=as.numeric(lambs)+((20024/167218))*schafe) 
@@ -2388,7 +2388,7 @@ str(first_estimate_num)
 mutterschafe<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, boecke_hammel_other, total_milch_mutterschafe)
 mutterschafe <-mutterschafe %>% mutate(schafe=as.numeric(boecke_hammel_other)+as.numeric(total_milch_mutterschafe))
 
-# strobasiert und guellebasiert, do the split
+# strohbasiert und guellebasiert, do the split
 mutterschafe<-mutterschafe %>% mutate(verfahren="strohbasiert")
 
 #Daten von LTZ Augustenberg
@@ -2418,7 +2418,7 @@ str(first_estimate_num)
 ziegen<- first_estimate_num%>% select(NUTS_2, region=Kreis_name, total_ziegen)
 ziegen
 
-# strobasiert und guellebasiert, do the split
+# strohbasiert und guellebasiert, do the split
 ziegen<-ziegen %>% mutate(verfahren="strohbasiert")
 
 #ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
