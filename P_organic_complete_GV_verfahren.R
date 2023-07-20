@@ -2476,7 +2476,7 @@ NPK_estimate_bawue<-bawue_milchvieh_pigs_complete %>%
           mutate(Type="LAMB", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="LAMB", performance_level=NA) %>% select(-c(boecke_hammel_other:schafe))) %>%
 
   rbind(mutterschafe %>% rename(No_animals="schafe") %>% select(NUTS_2 ,region, No_animals:K20_kg_year) %>% 
-          mutate(Type="CALV", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))
+          mutate(Type="Mutterschafe", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))
 
 
 if(laptob_work==TRUE) {
