@@ -1276,37 +1276,40 @@ cows_PKN_g %>% summarize(sum(No_animals))
 
 #cows_PKN %>% print(n=Inf) 
 
+#Berechnung des scaling factors
 # NPK soll bezogen werden auf die Milchleistung, daher wird das hier linear skaliert
-cows_PKN_g<-cows_PKN_g %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
-                              TM_scaling_factor=TM_kg_Tier_jahr/Kalkulation_milchleistung,
-                              N_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
-                              P205_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
-                              K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
+# cows_PKN_g<-cows_PKN_g %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
+#                               TM_scaling_factor=TM_kg_Tier_jahr/Kalkulation_milchleistung,
+#                               N_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
+#                               P205_scaling_factor=P205_kg_Tier_jahr/Kalkulation_milchleistung,
+#                               K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
 
-cows_PKN_g <- cows_PKN_g %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau, Einstreu, N_scaling_factor:K20_scaling_factor )
+# 20.07.2023 Don't do the scaling: It is easier and you get closer to the Thuenen estimate; does not change much anyway
+cows_PKN_g <- cows_PKN_g %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau, Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr)
 cows_PKN_g<-cows_PKN_g %>%select(-No_animals_stroh)
 cows_PKN_g<-cows_PKN_g %>%select(-No_animals) %>% rename(No_animals=No_animals_guelle) %>% mutate(verfahren="guellebasiert")
 
-cows_PKN_s<-cows_PKN_s %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
-                                  TM_scaling_factor=TM_kg_Tier_jahr/Kalkulation_milchleistung,
-                                  N_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
-                                  P205_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
-                                  K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
+# Berechnung scaling factor fuer stroh
+# cows_PKN_s<-cows_PKN_s %>% mutate(FM_scaling_factor=FM_kg_Tier_jahr/Kalkulation_milchleistung,
+#                                   TM_scaling_factor=TM_kg_Tier_jahr/Kalkulation_milchleistung,
+#                                   N_scaling_factor=N_kg_Tier_jahr/Kalkulation_milchleistung,
+#                                   P205_scaling_factor=P205_kg_Tier_jahr/Kalkulation_milchleistung,
+#                                   K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
 
-cows_PKN_s <- cows_PKN_s %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau,Einstreu, N_scaling_factor:K20_scaling_factor )
+cows_PKN_s <- cows_PKN_s %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau,Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr )
 cows_PKN_s<-cows_PKN_s %>%select(-No_animals_guelle)
 cows_PKN_s<-cows_PKN_s %>%select(-No_animals) %>% rename(No_animals=No_animals_stroh) %>% mutate(verfahren="strohbasiert")
 
 # final calculation of N, P, K per region 
 # question, this needs to be reduced by the amount that goes to Grünland and the amount that is not available to plants 
 
-cows_PKN_g<-cows_PKN_g %>% mutate(N_region_kgjahr=No_animals*N_scaling_factor*adjusted_avg_milk_production,
-                              P205_region_kgjahr=No_animals*P205_scaling_factor*adjusted_avg_milk_production,
-                              K20_region_kgjahr=No_animals*K20_scaling_factor*adjusted_avg_milk_production)
+cows_PKN_g<-cows_PKN_g %>% mutate(N_region_kgjahr=No_animals*N_kg_Tier_jahr,
+                              P205_region_kgjahr=No_animals*P205_kg_Tier_jahr,
+                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr)
 
-cows_PKN_s<-cows_PKN_s %>% mutate(N_region_kgjahr=No_animals*N_scaling_factor*adjusted_avg_milk_production,
-                              P205_region_kgjahr=No_animals*P205_scaling_factor*adjusted_avg_milk_production,
-                              K20_region_kgjahr=No_animals*K20_scaling_factor*adjusted_avg_milk_production)
+cows_PKN_s<-cows_PKN_s %>% mutate(N_region_kgjahr=No_animals*N_kg_Tier_jahr,
+                              P205_region_kgjahr=No_animals*P205_kg_Tier_jahr,
+                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr)
 
 
 
@@ -1320,6 +1323,7 @@ total_N_g
 total_N_s<-cows_PKN_s %>% summarize(total_N_sum=sum(N_region_kgjahr, na.rm=T)) 
 total_N_s
 
+total_N_s+total_N_g
 
 cows_PKN<-rbind(cows_PKN_g, cows_PKN_s)
 cows_PKN
@@ -1740,6 +1744,8 @@ jungrinder_male<-jungrinder_male %>% mutate(verfahren=1)
 jungrinder_mast_s <- jungrinder_male %>% select(NUTS_2:region, No_animals_s, verfahren) %>% left_join(performance_level_rindermast %>% filter(Einstreu==2), by="verfahren")
 jungrinder_mast_g <- jungrinder_male %>% select(NUTS_2:region, No_animals_g, verfahren) %>% left_join(performance_level_rindermast %>% filter(Einstreu==0), by="verfahren")
 
+jungrinder_mast_g <- jungrinder_mast_g %>% mutate(verfahren="guellebasiert")
+jungrinder_mast_s <- jungrinder_mast_s %>% mutate(verfahren="strohbasiert")
 
 
 jungrinder_mast_s<-jungrinder_mast_s %>% mutate(N_kg_year=No_animals_s*N_kg_Tier_jahr,
