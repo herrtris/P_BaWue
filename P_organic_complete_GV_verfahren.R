@@ -1285,7 +1285,7 @@ cows_PKN_g %>% summarize(sum(No_animals))
 #                               K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
 
 # 20.07.2023 Don't do the scaling: It is easier and you get closer to the Thuenen estimate; does not change much anyway
-cows_PKN_g <- cows_PKN_g %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau, Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr)
+cows_PKN_g <- cows_PKN_g %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau, Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr,FM_kg_Tier_jahr)
 cows_PKN_g<-cows_PKN_g %>%select(-No_animals_stroh)
 cows_PKN_g<-cows_PKN_g %>%select(-No_animals) %>% rename(No_animals=No_animals_guelle) %>% mutate(verfahren="guellebasiert")
 
@@ -1296,7 +1296,7 @@ cows_PKN_g<-cows_PKN_g %>%select(-No_animals) %>% rename(No_animals=No_animals_g
 #                                   P205_scaling_factor=P205_kg_Tier_jahr/Kalkulation_milchleistung,
 #                                   K20_scaling_factor=K20_kg_Tier_jahr/Kalkulation_milchleistung)
 
-cows_PKN_s <- cows_PKN_s %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau,Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr )
+cows_PKN_s <- cows_PKN_s %>% select(NUTS_2:Rasse, Produkt,Leistungsniveau,Einstreu, N_kg_Tier_jahr:K20_kg_Tier_jahr,FM_kg_Tier_jahr )
 cows_PKN_s<-cows_PKN_s %>%select(-No_animals_guelle)
 cows_PKN_s<-cows_PKN_s %>%select(-No_animals) %>% rename(No_animals=No_animals_stroh) %>% mutate(verfahren="strohbasiert")
 
@@ -1305,16 +1305,18 @@ cows_PKN_s<-cows_PKN_s %>%select(-No_animals) %>% rename(No_animals=No_animals_s
 
 cows_PKN_g<-cows_PKN_g %>% mutate(N_region_kgjahr=No_animals*N_kg_Tier_jahr,
                               P205_region_kgjahr=No_animals*P205_kg_Tier_jahr,
-                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr)
+                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr,
+                              FM_region_kgjahr=No_animals*FM_kg_Tier_jahr)
 
 cows_PKN_s<-cows_PKN_s %>% mutate(N_region_kgjahr=No_animals*N_kg_Tier_jahr,
                               P205_region_kgjahr=No_animals*P205_kg_Tier_jahr,
-                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr)
+                              K20_region_kgjahr=No_animals*K20_kg_Tier_jahr,
+                              FM_region_kgjahr=No_animals*FM_kg_Tier_jahr)
 
 
 
-cows_PKN_s<-cows_PKN_s %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr)
-cows_PKN_g<-cows_PKN_g %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr)
+cows_PKN_s<-cows_PKN_s %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr,FM_region_kgjahr)
+cows_PKN_g<-cows_PKN_g %>% select(NUTS_2:performance_level,No_animals,verfahren,Produkt,Einstreu,Leistungsniveau, N_region_kgjahr:K20_region_kgjahr,FM_region_kgjahr)
 
 
 total_N_g<-cows_PKN_g %>% summarize(total_N_sum=sum(N_region_kgjahr, na.rm=T)) 
@@ -1351,7 +1353,7 @@ mutterkuhhaltung<-mutterkuhhaltung %>% mutate(id=1)
 NPK_mutterkuh <- read_excel("overview_wirtschaftduengeranfall.xlsx",sheet = "7.6_Mutterkuhhaltung" )
 
 
-NPK_mutterkuh<-NPK_mutterkuh %>% select(`performance and feed_level`, `Einstreu kg FM/(Tier · d)`, Produkt, N_kg_Tier_jahr:K20_kg_Tier_jahr) %>% 
+NPK_mutterkuh<-NPK_mutterkuh %>% select(`performance and feed_level`, `Einstreu kg FM/(Tier · d)`, Produkt, N_kg_Tier_jahr:K20_kg_Tier_jahr,FM_kg_Tier_jahr) %>% 
                                 filter(`performance and feed_level`=="Winterstall und Sommerweide 165 stalltage, 600kg, 270kg") %>%
                                 filter(`Einstreu kg FM/(Tier · d)`==6 | `Einstreu kg FM/(Tier · d)`==0 ) %>% mutate(id=1)
 
@@ -1367,11 +1369,13 @@ mutterkuhhaltung_s<-mutterkuhhaltung %>% select(NUTS_2, region, other_cows, id) 
 
 mutterkuhhaltung_g<-mutterkuhhaltung_g %>% mutate(N_region_jahr=No_animals_g*N_kg_Tier_jahr,
                                               P205_region_Jahr=No_animals_g*P205_kg_Tier_jahr,
-                                              K20_regio_jahr=No_animals_g*K20_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
+                                              K20_regio_jahr=No_animals_g*K20_kg_Tier_jahr,
+                                              FM_regio_jahr=No_animals_g*FM_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
 
 mutterkuhhaltung_s<-mutterkuhhaltung_s %>% mutate(N_region_jahr=No_animals_s*N_kg_Tier_jahr,
                                                   P205_region_Jahr=No_animals_s*P205_kg_Tier_jahr,
-                                                  K20_regio_jahr=No_animals_s*K20_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
+                                                  K20_regio_jahr=No_animals_s*K20_kg_Tier_jahr,
+                                                  FM_regio_jahr=No_animals_s*FM_kg_Tier_jahr)%>% select(-c(P205_kg_Tier_jahr,K20_kg_Tier_jahr, N_kg_Tier_jahr))
 
 mutterkuhhaltung_s<-mutterkuhhaltung_s %>% select(-other_cows) %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strohbasiert")
 mutterkuhhaltung_g<-mutterkuhhaltung_g %>% select(-other_cows) %>% rename(No_animals=No_animals_g) %>% mutate(verfahren="guellebasiert")
@@ -1462,11 +1466,19 @@ kaelber<-first_estimate_num %>% select(NUTS_2, region=Kreis_name, total_kaelber=
 
 
 #ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
-kaelber<-kaelber %>% mutate(N_Tier=16.6, P_Tier=6.4, K_Tier=15.3) %>% mutate(Leistungsniveau="Kaelberaufzucht16wochen")
+# Daten kommen vom KTBL wrtschaftsduengerrechner - Kaelberaufzuchteinflaechenbucht mit tiefstreu für gruppenhaltung, ohne weidegang, 0 bis 16 wochen, 90 kg zuwachs je aklb, 3 durchgaenge
+
+# KTBL unterscheidet aber zwischen N_lager und N_ausbringung, N_ausbringung ist bei 14.6 nicht 16.3 Nlager
+kaelber<-kaelber %>% mutate(N_Tier=16.3, P_Tier=7.6, K_Tier=21.2,FM_kg_Tier_jahr=5300) %>% mutate(Leistungsniveau="Kaelberaufzucht16wochen")
+
+
+#andere DAten von TLZ aber unklar ob hier noch abschlaege zu rechnen sind
+#kaelber<-kaelber %>% mutate(N_Tier=16.6, P_Tier=6.4, K_Tier=15.3) %>% mutate(Leistungsniveau="Kaelberaufzucht16wochen")
 
 kaelber<-kaelber %>% mutate(N_kg_year=total_kaelber*N_Tier,
                           P205_kg_year=total_kaelber*P_Tier,
-                          K20_kg_year=total_kaelber*K_Tier)
+                          K20_kg_year=total_kaelber*K_Tier,
+                          FM_regio_jahr=total_kaelber*FM_kg_Tier_jahr)
 
 
 kaelber <- kaelber %>% select(-c(N_Tier:K_Tier))
@@ -1619,11 +1631,13 @@ jungrinder_female_g %>% summarize(sum(No_animals_g))
 
 jungrinder_female_s<-jungrinder_female_s %>% mutate(N_kg_year=No_animals_s*N_kg_Tier_jahr,
                                                 P205_kg_year=No_animals_s*P205_kg_Tier_jahr,
-                                                K20_kg_year=No_animals_s*K20_kg_Tier_jahr)
+                                                K20_kg_year=No_animals_s*K20_kg_Tier_jahr,
+                                                FM_regio_jahr=No_animals_s*FM_kg_Tier_jahr)
 
 jungrinder_female_g<-jungrinder_female_g %>% mutate(N_kg_year=No_animals_g*N_kg_Tier_jahr,
                                                     P205_kg_year=No_animals_g*P205_kg_Tier_jahr,
-                                                    K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
+                                                    K20_kg_year=No_animals_g*K20_kg_Tier_jahr,
+                                                    FM_regio_jahr=No_animals_g*FM_kg_Tier_jahr)
 
 
 # amount of N je system
@@ -1631,8 +1645,8 @@ jungrinder_female_g %>% summarize(sum(N_kg_year))
 jungrinder_female_s %>% summarize(sum(N_kg_year))
 
 
-jungrinder_female_s<-jungrinder_female_s %>% select(NUTS_2:performance_level,Produkt,Leistungsniveau, Einstreu, N_kg_year:K20_kg_year)
-jungrinder_female_g<-jungrinder_female_g %>% select(NUTS_2:performance_level,Produkt,Leistungsniveau,Einstreu, N_kg_year:K20_kg_year)
+jungrinder_female_s<-jungrinder_female_s %>% select(NUTS_2:performance_level,Produkt,Leistungsniveau, Einstreu, N_kg_year:K20_kg_year,FM_regio_jahr)
+jungrinder_female_g<-jungrinder_female_g %>% select(NUTS_2:performance_level,Produkt,Leistungsniveau,Einstreu, N_kg_year:K20_kg_year,FM_regio_jahr)
 
 jungrinder_female_s<-jungrinder_female_s %>% mutate(verfahren="strohbasiert") %>% rename(No_animals="No_animals_s")
 jungrinder_female_g<-jungrinder_female_g %>% mutate(verfahren="guellebasiert") %>% rename(No_animals="No_animals_g")
@@ -1658,7 +1672,7 @@ rm(jungrinder_B, jungrinder_F, jungrinder_rbt, jungrinder_sbt, jungrinder_voer)
 rm(jungrinder_B_s, jungrinder_F_s, jungrinder_rbt_s, jungrinder_sbt_s, jungrinder_voer_s)
 rm(jungrinder_B_g, jungrinder_F_g, jungrinder_rbt_g, jungrinder_sbt_g, jungrinder_voer_g)
 rm(jungrinder_female_g, jungrinder_female_s)
-rm(performance_level_jungrinder, performance_level_kaelber)
+rm(performance_level_jungrinder)
 rm(performance_level)
 
 ######################################################################################################################################################################################################
@@ -1750,12 +1764,14 @@ jungrinder_mast_s <- jungrinder_mast_s %>% mutate(verfahren="strohbasiert")
 
 jungrinder_mast_s<-jungrinder_mast_s %>% mutate(N_kg_year=No_animals_s*N_kg_Tier_jahr,
                                             P205_kg_year=No_animals_s*P205_kg_Tier_jahr,
-                                            K20_kg_year=No_animals_s*K20_kg_Tier_jahr)
+                                            K20_kg_year=No_animals_s*K20_kg_Tier_jahr,
+                                            FM_regio_jahr=No_animals_s*FM_kg_Tier_jahr)
 
 
 jungrinder_mast_g<-jungrinder_mast_g %>% mutate(N_kg_year=No_animals_g*N_kg_Tier_jahr,
                                                 P205_kg_year=No_animals_g*P205_kg_Tier_jahr,
-                                                K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
+                                                K20_kg_year=No_animals_g*K20_kg_Tier_jahr,
+                                                FM_regio_jahr=No_animals_g*FM_kg_Tier_jahr)
 
 
 # N je verfahren
@@ -1763,8 +1779,8 @@ jungrinder_mast_s %>% summarize(sum(N_kg_year))
 jungrinder_mast_g %>% summarize(sum(N_kg_year))
 
 
-jungrinder_mast_s<-jungrinder_mast_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_s")
-jungrinder_mast_g<-jungrinder_mast_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_g")
+jungrinder_mast_s<-jungrinder_mast_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year,FM_regio_jahr) %>% rename(No_animals="No_animals_s")
+jungrinder_mast_g<-jungrinder_mast_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year,FM_regio_jahr) %>% rename(No_animals="No_animals_g")
 
 
 jungrinder_mast<-rbind(jungrinder_mast_s, jungrinder_mast_g)
@@ -1810,15 +1826,15 @@ rm(list = ls()[!ls() %in% c("jungrinder_mast", "jungrinder_female", "kaelber","m
 # Is it possible to put these datatest togehter?
 milchvieh_NPK_complete<-jungrinder_mast %>% mutate(Type="BULL", performance_level=NA, Rasse="Fleckvieh") %>%
                           rbind(jungrinder_female %>% mutate(Type="HEIT"))%>%
-                          rbind(kaelber %>% rename(No_animals="total_kaelber") %>% select(NUTS_2:K20_kg_year) %>% 
+                          rbind(kaelber %>% rename(No_animals="total_kaelber") %>% select(NUTS_2:K20_kg_year,FM_regio_jahr) %>% select(-c(FM_kg_Tier_jahr))%>%
                                   mutate(Type="CALV", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))%>%
   
   rbind(mutterkuhhaltung  %>%rename(Einstreu= `Einstreu kg FM/(Tier · d)`) %>% 
                                 mutate(performance_level=NA, Type="SCOW", Rasse=NA) %>% 
-                                rename(N_kg_year="N_region_jahr", P205_kg_year="P205_region_Jahr",K20_kg_year="K20_regio_jahr")) %>%
+                                rename(N_kg_year="N_region_jahr", P205_kg_year="P205_region_Jahr",K20_kg_year="K20_regio_jahr") %>%select(-c(FM_kg_Tier_jahr))) %>%
                           rbind(cows_PKN %>% select(-adjusted_avg_milk_production)%>% 
                                 rename(Rasse="Race") %>% mutate(Type="DCOW") %>% 
-                                rename(N_kg_year="N_region_kgjahr", P205_kg_year="P205_region_kgjahr",K20_kg_year="K20_region_kgjahr"))
+                                rename(N_kg_year="N_region_kgjahr", P205_kg_year="P205_region_kgjahr",K20_kg_year="K20_region_kgjahr",FM_regio_jahr="FM_region_kgjahr"))
 
 # achievement: one dataset with NPK estiamtes per region for milchvieh!
 
@@ -1872,17 +1888,23 @@ mast_bawue_g <- pigs_bawue %>% filter(pigs=="andere Schweine") %>% select(region
                 select(pigs, Futter,Leistungsniveau="Leistung und Futergrundlage" ,Einstreu=`Einstreu kg FM/(TP · d)`, Produkt=Wirtshaftsdüngerart, N,P2O5, K2O), by="pigs")
 
 
+mast_bawue_g <-  mast_bawue_g %>% left_join(performance_level_schwein_g %>% select(Produkt=Wirtshaftsdüngerart, FM), by="Produkt")
+
+mast_bawue_s <-  mast_bawue_s %>% left_join(performance_level_schwein_s %>% select(Produkt=Wirtshaftsdüngerart, FM), by="Produkt")
+
 mast_bawue_s<- mast_bawue_s %>% select(-c(No., Futter))
 mast_bawue_g<- mast_bawue_g %>% select(-c(No., Futter))
 
 mast_bawue_s<-mast_bawue_s %>% mutate(N_kg_year=No_animals_s*N,
                                   P2O5_kg_year=No_animals_s*P2O5,
-                                  K2O_kg_year=No_animals_s*K2O)
+                                  K2O_kg_year=No_animals_s*K2O,
+                                  FM_regio_jahr=No_animals_s*FM)
 
 
 mast_bawue_g<-mast_bawue_g %>% mutate(N_kg_year=No_animals_g*N,
                                     P2O5_kg_year=No_animals_g*P2O5,
-                                    K2O_kg_year=No_animals_g*K2O)
+                                    K2O_kg_year=No_animals_g*K2O,
+                                    FM_regio_jahr=No_animals_g*FM)
 
 
 mast_bawue_g <- mast_bawue_g %>% select(-c(N,P2O5,K2O )) 
@@ -1968,11 +1990,14 @@ ferkel_g$P2O5 <- as.numeric(ferkel_g$P2O5)
 ferkel_g$K2O <- as.numeric(ferkel_g$K2O)
 
 
+
+
 ferkel<-rbind(ferkel_s %>% rename(No_animals=No_animals_s) %>% mutate(verfahren="strohbasiert"), ferkel_g %>% rename(No_animals=No_animals_g) %>% mutate(verfahren="guellebasiert"))
 
-ferkel_NPK<-ferkel %>% select(NUTS_2:pigs, No_animals,verfahren, Leistungsniveau, Einstreu=`Einstreu kg FM/(TP · d)`, Produkt, N:K2O) %>% mutate(N_kg_year=No_animals*N,
+ferkel_NPK<-ferkel %>% select(NUTS_2:pigs, No_animals,verfahren, Leistungsniveau, Einstreu=`Einstreu kg FM/(TP · d)`, Produkt, N:K2O,FM) %>% mutate(N_kg_year=No_animals*N,
                                                                            P2O5_kg_year=No_animals*P2O5,
-                                                                           K2O_kg_year=No_animals*K2O) %>% select(-c(N,P2O5,K2O ))
+                                                                           K2O_kg_year=No_animals*K2O,
+                                                                           FM_regio_jahr=No_animals*FM) %>% select(-c(N,P2O5,K2O,FM ))
 
 ferkel_NPK %>% print(n=Inf)    
 
@@ -1994,7 +2019,7 @@ if(laptob_work==TRUE) {
 #####################################################################################################################################################################################################
 ## continue with Ferkelerzeugung
 
-performance_level_ferkelerzeugung <- read_excel("fertillizer_sang.xlsx",sheet = "8.6_Ferkelerzeugung", skip=2 )
+performance_level_ferkelerzeugung <- read_excel("fertillizer_sang_2.xlsx",sheet = "8.6_Ferkelerzeugung", skip=2 )
 
 ## For now I choose "standardfutter"
 ## Fix assumption is 26 ferkel 279kg zuwachs je TP und Jahr
@@ -2018,16 +2043,20 @@ zuchtsauen_g<- zuchtsauen %>% mutate(No_animals_g=No.*0.854)
 zuchtsauen_s<- zuchtsauen_s %>% left_join(performance_level_s %>% select(Leistungsniveau=`Leistung und Futergrundlage`, Einstreu=`Einstreu kg FM/(Tier · d)`,Wirtshaftsdüngerart:pigs), by="pigs") 
 zuchtsauen_g<- zuchtsauen_g %>% left_join(performance_level_g %>% select(Leistungsniveau=`Leistung und Futergrundlage`, Einstreu=`Einstreu kg FM/(Tier · d)`,Wirtshaftsdüngerart:pigs), by="pigs") 
 
+
+
 # Schaetzung NPK
-zuchtsauen_s<-zuchtsauen_s %>% select(NUTS_2:pigs,Leistungsniveau,Einstreu,No_animals=No_animals_s, Produkt="Wirtshaftsdüngerart", N:K2O) %>% 
+zuchtsauen_s<-zuchtsauen_s %>% select(NUTS_2:pigs,Leistungsniveau,Einstreu,No_animals=No_animals_s, Produkt="Wirtshaftsdüngerart", N:K2O, FM) %>% 
                                                                                         mutate(N_kg_year=No_animals*N,
                                                                                                 P2O5_kg_year=No_animals*P2O5,
-                                                                                                K2O_kg_year=No_animals*K2O) %>% select(-c(N,P2O5,K2O ))
+                                                                                                K2O_kg_year=No_animals*K2O,
+                                                                                               FM_regio_jahr=No_animals*FM) %>% select(-c(N,P2O5,K2O,FM ))
 
-zuchtsauen_g<-zuchtsauen_g %>% select(NUTS_2:pigs,Leistungsniveau,Einstreu,No_animals=No_animals_g, Produkt="Wirtshaftsdüngerart", N:K2O) %>% 
+zuchtsauen_g<-zuchtsauen_g %>% select(NUTS_2:pigs,Leistungsniveau,Einstreu,No_animals=No_animals_g, Produkt="Wirtshaftsdüngerart", N:K2O, FM) %>% 
                               mutate(N_kg_year=No_animals*N,
                                      P2O5_kg_year=No_animals*P2O5,
-                                     K2O_kg_year=No_animals*K2O) %>% select(-c(N,P2O5,K2O ))
+                                     K2O_kg_year=No_animals*K2O,
+                                     FM_regio_jahr=No_animals*FM) %>% select(-c(N,P2O5,K2O,FM ))
 
 
 zuchtsauen_NPK<-rbind(zuchtsauen_s %>% mutate(verfahren="strohbasiert"), zuchtsauen_g %>% mutate(verfahren="guellebasiert"))
@@ -2043,9 +2072,6 @@ zuchtsauen_NPK %>% filter(verfahren=="strohbasiert") %>% summarize(sum(No_animal
 
 # estimate total N
 2820254+743150
-
-
-
 
 
 # DONE schaetzung NPK for ferkeleraufzucht
@@ -2065,7 +2091,7 @@ zuchtsauen_NPK
 head(milchvieh_NPK_complete)
 
 bawue_milchvieh_pigs_complete<-milchvieh_NPK_complete %>% 
-  rbind(mast_bawue %>% mutate(Rasse="Mastschwein", performance_level=NA,Type="PIGF") %>% select(-c(pigs))  %>%
+  rbind(mast_bawue %>% mutate(Rasse="Mastschwein", performance_level=NA,Type="PIGF") %>% select(-c(pigs,FM))  %>%
                        rename(N_kg_year="N_kg_year", P205_kg_year="P2O5_kg_year",K20_kg_year="K2O_kg_year", verfahren="Verfahren"))%>%
 
   rbind(ferkel_NPK %>% mutate(Rasse="Ferkel", performance_level=NA,Type="FERK") %>% select(-c(RP,pigs)) %>% 
@@ -2091,6 +2117,7 @@ performance_level_hens_choice<- performance_level_hens_choice[c(1:2),]
 performance_level_hens_choice
 
 # nach thuenen emission inventory ist das way to high, ich mache hier eine anpassung beim ersten minus 23.5% beim zweiten - 40%
+# Anahmen hier noch einmal überprüfen!!!
 performance_level_hens_choice<-performance_level_hens_choice %>%
   mutate(N= case_when(
     Wirtshaftsdüngerart == "Frischmist" ~ 0.81-(0.81*0.2353457),
@@ -2109,19 +2136,25 @@ performance_level_hens_choice<-performance_level_hens_choice %>%
     Wirtshaftsdüngerart == "Rottemist" ~ 0.48-(0.48*0.3971458)-0.12
   ))
 
+# nochmal nachbearbeitet nochmal anschauen später
+performance_level_hens_choice<-performance_level_hens_choice %>%
+  mutate(FM= case_when(
+    Wirtshaftsdüngerart == "Frischmist" ~ 61.8-(61.8*0.2353457),
+    Wirtshaftsdüngerart == "Rottemist" ~ 21.2-(21.1*0.3971458)))
 
 
 ## Estimate NPK for hens in BaWue 2020
-hens<- hens %>% left_join(performance_level_hens_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type), by="Type") 
+hens<- hens %>% left_join(performance_level_hens_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type, FM), by="Type") 
 
 hens$N <- as.numeric(hens$N)
 hens$P2O5 <- as.numeric(hens$P2O5)
 hens$K2O <- as.numeric(hens$K2O)
 
-hens_NPK<-hens %>% select(NUTS_2:Type,Einstreu,Leistungsniveau,Produkt="Wirtshaftsdüngerart", N:K2O) %>% mutate(N_kg_year=HENS_num*N,
+hens_NPK<-hens %>% select(NUTS_2:Type,Einstreu,Leistungsniveau,Produkt="Wirtshaftsdüngerart", N:K2O,FM) %>% mutate(N_kg_year=HENS_num*N,
                                                                                                       P2O5_kg_year=HENS_num*P2O5,
-                                                                                                              K2O_kg_year=HENS_num*K2O) %>% 
-                                                                                                      select(-c(N,P2O5,K2O ))
+                                                                                                              K2O_kg_year=HENS_num*K2O,
+                                                                                                      FM_regio_jahr=HENS_num*FM) %>% 
+                                                                                                      select(-c(N,P2O5,K2O,FM ))
 hens_NPK<-hens_NPK %>% rename(No_animals=HENS_num)
 
 # Do the basic checks
@@ -2157,40 +2190,46 @@ JUNGHENS
 performance_level_JUNGHENS <- read_excel("fertillizer_sang.xlsx",sheet = "11.6_Legehennen", skip=2 )
 performance_level_JUNGHENS
 
-# choose prod verfahren 1, Legehennen 19.5kg Eimasse
+# 
 performance_level_JUNGHENS_choice <- performance_level_JUNGHENS %>% mutate(Type="JUNGHENS") %>% filter(`Einstreu kg FM/(TP · d)`=="0.13")
 performance_level_JUNGHENS_choice<- performance_level_JUNGHENS_choice[c(1:2),]
 performance_level_JUNGHENS_choice
 
-# nach thuenen emission inventory ist das way to high, ich mache hier eine anpassung beim ersten minus 23.5% beim zweiten - 40%
-performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+# DAten von LTZ Standard junghennen geteilt durch hundert
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Rottemist")%>%
   mutate(N= case_when(
-    Wirtshaftsdüngerart == "Frischmist" ~ 0.3
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.32
   ))
 
-performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Rottemist")%>%
   mutate(P2O5= case_when(
-    Wirtshaftsdüngerart == "Frischmist" ~ 0.18
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.21
   ))
 
-performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Frischmist")%>%
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Rottemist")%>%
   mutate(K2O= case_when(
-    Wirtshaftsdüngerart == "Frischmist" ~ 0.15
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.15
   ))
 
-
+performance_level_JUNGHENS_choice<-performance_level_JUNGHENS_choice %>% filter(Wirtshaftsdüngerart == "Rottemist")%>%
+  mutate(FM= case_when(
+    Wirtshaftsdüngerart == "Rottemist" ~ 0.84*1000
+  ))
 
 ## Estimate NPK for hens in BaWue 2020
-JUNGHENS<- JUNGHENS %>% left_join(performance_level_JUNGHENS_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type), by="Type") 
+JUNGHENS<- JUNGHENS %>% left_join(performance_level_JUNGHENS_choice %>% select(Einstreu=`Einstreu kg FM/(TP · d)`,Leistungsniveau=`Produktions-verfahren` ,Wirtshaftsdüngerart:Type, FM), by="Type") 
+
 
 JUNGHENS$N <- as.numeric(JUNGHENS$N)
 JUNGHENS$P2O5 <- as.numeric(JUNGHENS$P2O5)
 JUNGHENS$K2O <- as.numeric(JUNGHENS$K2O)
 
-JUNGHENS_NPK<-JUNGHENS %>% select(NUTS_2:Type,Einstreu,Leistungsniveau,Produkt="Wirtshaftsdüngerart", N:K2O) %>% mutate(N_kg_year=JUNGHENS_num*N,
+JUNGHENS_NPK<-JUNGHENS %>% select(NUTS_2:Type,Einstreu,Leistungsniveau,Produkt="Wirtshaftsdüngerart", N:K2O,FM) %>% mutate(N_kg_year=JUNGHENS_num*N,
                                                                                                                 P2O5_kg_year=JUNGHENS_num*P2O5,
-                                                                                                                K2O_kg_year=JUNGHENS_num*K2O) %>% 
-  select(-c(N,P2O5,K2O ))
+                                                                                                                K2O_kg_year=JUNGHENS_num*K2O,
+                                                                                                                FM_regio_jahr=JUNGHENS_num*FM) %>% 
+                                                                                                                 select(-c(N,P2O5,K2O,FM ))
+
 JUNGHENS_NPK<-JUNGHENS_NPK %>% rename(No_animals=JUNGHENS_num)
 
 # Do the basic checks
@@ -2224,15 +2263,18 @@ performance_level_masth_choice
 #performance_level_masth_choice
 
 ## Estimate NPK for masth in BaWue 2020
-masth<- masth %>% left_join(performance_level_masth_choice %>% select(Leistungsniveau=`Produktions-verfahren`, Einstreu=`Einstreu kg FM/(TP · d)`, Wirtshaftsdüngerart:Type), by="Type") 
+masth<- masth %>% left_join(performance_level_masth_choice %>% select(Leistungsniveau=`Produktions-verfahren`, Einstreu=`Einstreu kg FM/(TP · d)`, Wirtshaftsdüngerart:Type, FM), by="Type") 
 
 masth$N <- as.numeric(masth$N)
 masth$P2O5 <- as.numeric(masth$P2O5)
 masth$K2O <- as.numeric(masth$K2O)
 
-masth_NPK<-masth %>% select(NUTS_2:Type,Leistungsniveau,Einstreu,Produkt="Wirtshaftsdüngerart", N:K2O) %>% mutate(N_kg_year=no._masthuehner_estimated*N,
+masth_NPK<-masth %>% select(NUTS_2:Type,Leistungsniveau,Einstreu,Produkt="Wirtshaftsdüngerart", N:K2O, FM) %>% mutate(N_kg_year=no._masthuehner_estimated*N,
                                                                                        P2O5_kg_year=no._masthuehner_estimated*P2O5,
-                                                                                       K2O_kg_year=no._masthuehner_estimated*K2O) %>% select(-c(N,P2O5,K2O ))
+                                                                                       K2O_kg_year=no._masthuehner_estimated*K2O,
+                                                                                       FM_regio_jahr=no._masthuehner_estimated*as.numeric(FM)) %>% 
+                                                                                       select(-c(N,P2O5,K2O,FM))
+
 masth_NPK<-masth_NPK %>% rename(No_animals="no._masthuehner_estimated")
 
 # Doing the checks
@@ -2286,12 +2328,14 @@ jungrinder_mastfemale_g <- fbeef %>% select(NUTS_2:region, No_animals_g, verfahr
 
 jungrinder_mastfemale_s<-jungrinder_mastfemale_s %>% mutate(N_kg_year=No_animals_s*N_kg_Tier_jahr,
                                                 P205_kg_year=No_animals_s*P205_kg_Tier_jahr,
-                                                K20_kg_year=No_animals_s*K20_kg_Tier_jahr)
+                                                K20_kg_year=No_animals_s*K20_kg_Tier_jahr,
+                                                FM_regio_jahr=No_animals_s*FM_kg_Tier_jahr)
 
 
 jungrinder_mastfemale_g<-jungrinder_mastfemale_g %>% mutate(N_kg_year=No_animals_g*N_kg_Tier_jahr,
                                                 P205_kg_year=No_animals_g*P205_kg_Tier_jahr,
-                                                K20_kg_year=No_animals_g*K20_kg_Tier_jahr)
+                                                K20_kg_year=No_animals_g*K20_kg_Tier_jahr,
+                                                FM_regio_jahr=No_animals_g*FM_kg_Tier_jahr)
 
 
 # N je verfahren
@@ -2299,8 +2343,8 @@ jungrinder_mastfemale_s %>% summarize(sum(N_kg_year))
 jungrinder_mastfemale_g %>% summarize(sum(N_kg_year))
 
 
-jungrinder_mastfemale_s<-jungrinder_mastfemale_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_s")
-jungrinder_mastfemale_g<-jungrinder_mastfemale_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year) %>% rename(No_animals="No_animals_g")
+jungrinder_mastfemale_s<-jungrinder_mastfemale_s %>% select(NUTS_2:verfahren,Einstreu,Leistungsniveau,Produkt, N_kg_year:K20_kg_year,FM_regio_jahr) %>% rename(No_animals="No_animals_s")
+jungrinder_mastfemale_g<-jungrinder_mastfemale_g %>% select(NUTS_2:verfahren,Einstreu,Produkt,Leistungsniveau, N_kg_year:K20_kg_year,FM_regio_jahr) %>% rename(No_animals="No_animals_g")
 
 
 jungrinder_mastfemale<-rbind(jungrinder_mastfemale_s, jungrinder_mastfemale_g)
@@ -2334,15 +2378,16 @@ pferde
 pferde<-pferde %>% mutate(verfahren="strohbasiert")
 
 #ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
-pferde<-pferde %>% mutate(N_Tier=49.2143, P_Tier=23.4-1.8857, K_Tier=57.5-1.8857) %>% mutate(Leistungsniveau="500-600kgLG,leichtearbeit")
+pferde<-pferde %>% mutate(N_Tier=49.2143, P_Tier=23.4-1.8857, K_Tier=57.5-1.8857, FM=(8.6+10+11.5)/3*1000 )%>% mutate(Leistungsniveau="500-600kgLG,leichtearbeit")
 
 
 pferde<-pferde %>% mutate(N_kg_year=total_pferde*N_Tier,
                           P205_kg_year=total_pferde*P_Tier,
-                          K20_kg_year=total_pferde*K_Tier)
+                          K20_kg_year=total_pferde*K_Tier,
+                          FM_regio_jahr=total_pferde*FM)
 
 
-pferde <- pferde %>% select(-c(N_Tier:K_Tier))
+pferde <- pferde %>% select(-c(N_Tier:K_Tier,FM))
 pferde
 
 pferde %>% summarize(sum(N_kg_year))
@@ -2366,16 +2411,17 @@ lamb %>% summarize(sum(lambs, na.rm = T))
 
 
 #Daten von LTZ Augustenberg 
-lamb<-lamb %>% mutate(N_Tier=5.9, P_Tier=1.9, K_Tier=6.5) %>% mutate(Leistungsniveau="Laemmer_bis1Jahr,konv")
+lamb<-lamb %>% mutate(N_Tier=5.9, P_Tier=1.9, K_Tier=6.5, FM=400) %>% mutate(Leistungsniveau="Laemmer_bis1Jahr,konv")
 
 lamb$lambs <- as.numeric(lamb$lambs)
 
 lamb<-lamb %>% mutate(N_kg_year=lambs*N_Tier,
                           P205_kg_year=lambs*P_Tier,
-                          K20_kg_year=lambs*K_Tier)
+                          K20_kg_year=lambs*K_Tier,
+                          FM_regio_jahr=lambs*FM)
 
 
-lamb <- lamb %>% select(-c(N_Tier:K_Tier))
+lamb <- lamb %>% select(-c(N_Tier:K_Tier,FM))
 lamb
 
 lamb %>% summarize(sum(N_kg_year, na.rm=T))
@@ -2392,7 +2438,7 @@ mutterschafe <-mutterschafe %>% mutate(schafe=as.numeric(boecke_hammel_other)+as
 mutterschafe<-mutterschafe %>% mutate(verfahren="strohbasiert")
 
 #Daten von LTZ Augustenberg
-mutterschafe<-mutterschafe %>% mutate(N_Tier=14.2, P_Tier=4.3, K_Tier=15.5) %>% mutate(Leistungsniveau="mutterschafe_ohneLamm_andereschafe_konv")
+mutterschafe<-mutterschafe %>% mutate(N_Tier=14.2, P_Tier=4.3, K_Tier=15.5, FM=1100) %>% mutate(Leistungsniveau="mutterschafe_ohneLamm_andereschafe_konv")
 
 
 ## anpassung thuenen von lambs zu schafe, zuschlag 20,024 tiere
@@ -2401,10 +2447,11 @@ mutterschafe <- mutterschafe %>% mutate(schafe=schafe-(1-(155209/167218))*schafe
 
 mutterschafe<-mutterschafe %>% mutate(N_kg_year=schafe*N_Tier,
                       P205_kg_year=schafe*P_Tier,
-                      K20_kg_year=schafe*K_Tier)
+                      K20_kg_year=schafe*K_Tier,
+                      FM_regio_jahr=schafe*FM)
 
 
-mutterschafe <- mutterschafe %>% select(-c(N_Tier:K_Tier))
+mutterschafe <- mutterschafe %>% select(-c(N_Tier:K_Tier,FM))
 mutterschafe
 
 mutterschafe %>% summarize(sum(N_kg_year, na.rm=T))
@@ -2422,16 +2469,17 @@ ziegen
 ziegen<-ziegen %>% mutate(verfahren="strohbasiert")
 
 #ktbl daten fuer wirtschaftsuenger pferde, take the average from thuenen and fit the data accordingly
-ziegen<-ziegen %>% mutate(N_Tier=15.2, P_Tier=5.7, K_Tier=18) %>% mutate(Leistungsniveau="Mutterziege(1.5laemmer)800kgmilch,andereziegen")
+ziegen<-ziegen %>% mutate(N_Tier=15.2, P_Tier=5.7, K_Tier=18, FM=1000) %>% mutate(Leistungsniveau="Mutterziege(1.5laemmer)800kgmilch,andereziegen")
 
 ziegen$total_ziegen<- as.numeric(ziegen$total_ziegen)
 
 ziegen<-ziegen %>% mutate(N_kg_year=total_ziegen*N_Tier,
                           P205_kg_year=total_ziegen*P_Tier,
-                          K20_kg_year=total_ziegen*K_Tier)
+                          K20_kg_year=total_ziegen*K_Tier,
+                          FM_regio_jahr=total_ziegen*FM)
 
 
-ziegen <- ziegen %>% select(-c(N_Tier:K_Tier))
+ziegen <- ziegen %>% select(-c(N_Tier:K_Tier, FM))
 ziegen
 
 ziegen %>% summarize(sum(N_kg_year, na.rm = T))
@@ -2466,16 +2514,16 @@ NPK_estimate_bawue<-bawue_milchvieh_pigs_complete %>%
   
     rbind(jungrinder_mastfemale %>% mutate(Type="Female_BEEF_cattle", performance_level=NA, Rasse="Fleckvieh"))%>%
 
-    rbind(pferde %>% rename(No_animals="total_pferde") %>% select(NUTS_2:K20_kg_year) %>% 
+    rbind(pferde %>% rename(No_animals="total_pferde") %>% select(NUTS_2:K20_kg_year,FM_regio_jahr) %>% 
         mutate(Type="HORSE", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Pferd", performance_level=NA))%>%
   
-  rbind(ziegen %>% rename(No_animals="total_ziegen") %>% select(NUTS_2:K20_kg_year) %>% 
+  rbind(ziegen %>% rename(No_animals="total_ziegen") %>% select(NUTS_2:K20_kg_year,FM_regio_jahr) %>% 
           mutate(Type="ZIEG", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse=NA, performance_level=NA)) %>%
   
-  rbind(lamb %>% rename(No_animals="lambs") %>% select(NUTS_2:K20_kg_year) %>% 
+  rbind(lamb %>% rename(No_animals="lambs") %>% select(NUTS_2:K20_kg_year,FM_regio_jahr) %>% 
           mutate(Type="LAMB", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="LAMB", performance_level=NA) %>% select(-c(boecke_hammel_other:schafe))) %>%
 
-  rbind(mutterschafe %>% rename(No_animals="schafe") %>% select(NUTS_2 ,region, No_animals:K20_kg_year) %>% 
+  rbind(mutterschafe %>% rename(No_animals="schafe") %>% select(NUTS_2 ,region, No_animals:K20_kg_year,FM_regio_jahr) %>% 
           mutate(Type="Mutterschafe", verfahren="strohbasiert", Einstreu=NA, Produkt="Frischmist&Rottemist",Rasse="Kalb", performance_level="NA"))
 
 
