@@ -872,6 +872,44 @@ kommune_CRid<-kommune_CRid %>% mutate(AGS_0_2=LAU_ID)
 kommune_CRid<- kommune_CRid %>% select(-LAU_ID) %>% mutate(value=1)
 head(kommune_CRid)
 
+
+
+
+
+
+# wieviele Crids gibt es insgesamt
+kommune_CRid %>% summarise(n())
+kommune_CRid %>% distinct(CRid)
+Rotations_tristan %>% distinct(LAU_ID)
+
+## Rotation matrix ist eine Liste aller crop rotations die möglich sind. Jede crop rotation ist in jedem Kreis moeglich
+# Create the datasets
+CRid <- c(1:146)
+regions  <- c("DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A","DE11B","DE11C","DE11D", 
+              "DE121","DE122","DE123","DE124","DE125", "DE126", "DE127", "DE128", "DE129", "DE12A","DE12B", "DE12C",
+              "DE131","DE132","DE133","DE134", "DE135","DE136","DE137","DE138","DE139","DE13A",
+               "DE141","DE142","DE143","DE144","DE145","DE146","DE147","DE148","DE149")
+
+
+# Create all possible combinations of CR_id and regions
+combinations <- expand.grid(CRid = CRid, region = regions)
+
+# Print the resulting dataset
+print(combinations)
+
+# kommune CR_id beinhaltet alle crop rotations die im jeweiligen kreis vorkommen
+# Welche crid/regions sind in combinations aber nicht kommune crid
+kommune_CRid %>% select(CRid, regions="AGS_0_2")
+head(combinations)
+CRs_not_available <- combinations %>% anti_join(kommune_CRid %>% select(CRid, region="AGS_0_2"), by=c("region", "CRid"))
+CRs_not_available %>% summarise(n())
+head(CRs_not_available)
+head(kommune_CRid)
+
+CRs_not_available<- CRs_not_available %>% mutate(value=1)
+CRs_not_available <-CRs_not_available %>%pivot_wider(names_from = region, values_from = value, values_fill = 0)
+
+
 ## Pivoting to get a nicer table
 
 kommune_CRid <-kommune_CRid %>%pivot_wider(names_from = AGS_0_2, values_from = value, values_fill = 0)
@@ -895,6 +933,10 @@ write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/La
 
 #### kommune_CR_ID, welche croprot kommt in welcher kommune vor?
 write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kommune_CRid.xlsx", col_names = TRUE)
+
+#### CRs_not_available, welche croprot kommt in welcher kommune NICHT vor?
+write_xlsx(x=CRs_not_available, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CRs_not_available.xlsx", col_names = TRUE)
+
 
 ## rotation_matrix_full
 write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/rotation_matrix_full.xlsx", col_names = TRUE)
