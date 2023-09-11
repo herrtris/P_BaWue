@@ -288,7 +288,7 @@ zentroid_p_joined_filtered <- zentroid_p_joined_filtered %>%
     
 zentroid_p_joined_filtered %>% filter(P_level >5.8)    
     
-    
+zentroid_p_joined_filtered %>% filter(P_level >7.0)      
   
 
 
@@ -349,9 +349,20 @@ zentroid_p_joined_filtered %>% filter(P_level >5.8)
 zentroid_p_joined_filtered    <-zentroid_p_joined_filtered %>% select(-NUTS_2.y) %>% rename(NUTS_2 ="NUTS_2.x")
 head(zentroid_p_joined_filtered)  
   
-  
+# ohne Brache herausfiltern  
 Landuse_plots_P <- zentroid_p_joined_filtered  %>% group_by(NUTS_2, Bodenguete, P_level_category) %>% 
                        summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) 
+
+Landuse_plots_P %>% summarise(sum(sum_ha))
+
+zentroid_p_joined_filtered  %>% filter(!Kennung=="B")%>% group_by(NUTS_2, Bodenguete, P_level_category) %>% 
+  summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number()) %>% summarise(sum(sum_ha))
+
+# mit Brache herausfiltern
+
+Landuse_plots_P <- zentroid_p_joined_filtered  %>% filter(!Kennung=="B")%>% group_by(NUTS_2, Bodenguete, P_level_category) %>% 
+  summarise(sum_ha=sum(FLAECHE_HA))%>% ungroup() %>% mutate(PLOT_ID=row_number())
+
 
 
 head(Landuse_plots_P)
@@ -360,7 +371,7 @@ Landuse_plots_P %>% group_by(NUTS_2)%>% count() #De125 hat nur 2 observations
 Landuse_plots_P %>% filter(NUTS_2=="DE125")
 
 
-write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Landuse_plots_P.xlsx", col_names = TRUE)
+write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Landuse_plots_P.xlsx", col_names = TRUE)
 
 
 
@@ -375,7 +386,7 @@ plot_bodenguete<-   plot_bodenguete %>% mutate(high= ifelse(Bodenguete %in% "hig
 plot_bodenguete <-plot_bodenguete %>% select(PLOT_ID, counties=NUTS_2, low, medium, high)
 plot_bodenguete
 
-write_xlsx(x=plot_bodenguete, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/plot_bodenguete.xlsx", col_names = TRUE)
+write_xlsx(x=plot_bodenguete, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/plot_bodenguete.xlsx", col_names = TRUE)
 
 
 
@@ -386,6 +397,8 @@ write_xlsx(x=plot_bodenguete, path = "C:/Users/User/OneDrive - bwedu/Dokumente/L
 
 Landuse_SQ_P <- zentroid_p_joined_filtered %>% group_by(NUTS_2, Kennung) %>% summarise(sum_ha=sum(FLAECHE_HA))
 head(Landuse_SQ_P)
+Landuse_SQ_P %>% ungroup()%>%summarize(sum(sum_ha, na.rm=T))
+
 
 Landuse_SQ_P %>% group_by(Kennung)%>%count(Kennung)
 
@@ -405,6 +418,10 @@ Landuse_SQ_P %>% ungroup%>% summarize(sum(sum_ha))
 Crop_share_BW_P <-zentroid_p_joined_filtered %>% filter(Kennung !="B") %>% group_by(NUTS_2) %>% mutate(sum_Kreis=sum(FLAECHE_HA)) %>%
   group_by(NUTS_2, Kennung, sum_Kreis) %>% summarise(sum=sum(FLAECHE_HA)) %>% mutate(share=sum/sum_Kreis) %>%
   select(-sum_Kreis, -sum) %>% spread(key=Kennung, value=share)
+
+crop_sum_quo<-  zentroid_p_joined_filtered %>% filter(Kennung !="B")  %>% group_by(NUTS_2, Kennung) %>% select(NUTS_2, Kennung, FLAECHE_HA) %>% summarise(crop_sum_quo=sum(FLAECHE_HA))
+write_xlsx(x=crop_sum_quo, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/crop_sum_quo.xlsx", col_names = TRUE)
+
 
 
 ####################################################################################################################################################################################
@@ -482,9 +499,16 @@ Energie_proha <- Energie_proha %>% replace_na(list(`Ertrag (10 MJ NEL/ha)`=0))
 Energie_proha %>% print(n=Inf)
 
 
-### write out Energy supply per crop per ha and soil quality or intenstiy 
-write_xlsx(x=Energie_proha, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Energie_proha.xlsx", col_names = TRUE)
+## 06.09.23 add a restriction only for silomais, silomais an sich darf nicht mehr sein als den zu deckenden energiebedarf der counties insgesamt
+str(Energie_proha)
+head(Energie_proha)
+Energie_silomais <-Energie_proha %>% filter(`crop abrre`=="SM")
 
+
+### write out Energy supply per crop per ha and soil quality or intenstiy 
+write_xlsx(x=Energie_proha, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Energie_proha.xlsx", col_names = TRUE)
+
+write_xlsx(x=Energie_silomais, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Energie_silomais.xlsx", col_names = TRUE)
 
 
 #################################################################################################################################################################
@@ -532,7 +556,7 @@ futterbau_bedarf_kreis <-   futterbau_bedarf_joined %>% select(NUTS_2,Bodenguete
 head(futterbau_bedarf_kreis)  
 
 #### Writing out fodder demand per county  
-write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/futterbau_bedarf_kreis.xlsx", col_names = TRUE)
+write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/futterbau_bedarf_kreis.xlsx", col_names = TRUE)
 
 
 
@@ -542,9 +566,9 @@ write_xlsx(x=futterbau_bedarf_kreis, path = "C:/Users/User/OneDrive - bwedu/Doku
 ### Landuse_SQ_P - Landuse_SQ_P
 ### Landuse_plots_P - Landuse_plots_P
 
-write_xlsx(x=Crop_share_BW_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep//18.04.23/crop_share_bw_Zentroide.xlsx", col_names = TRUE)
-write_xlsx(x=Landuse_SQ_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Landuse_SQ_P.xlsx", col_names = TRUE)
-write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Landuse_plots_P.xlsx", col_names = TRUE)
+write_xlsx(x=Crop_share_BW_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep//01.09.23/crop_share_bw_Zentroide.xlsx", col_names = TRUE)
+write_xlsx(x=Landuse_SQ_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Landuse_SQ_P.xlsx", col_names = TRUE)
+write_xlsx(x=Landuse_plots_P, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Landuse_plots_P.xlsx", col_names = TRUE)
 
 ## write out county_Flaeche(counties) #calculated in GAMS
 ## Die Flaechenrestriktion auf Kriesebene
@@ -571,8 +595,8 @@ kommune<-zentroid_p %>% distinct(AGS_0_2)
 ### kreis - kreis_P
 ### kommune - kommune_p
 
-write_xlsx(x=kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kreis_P.xlsx", col_names = FALSE)
-write_xlsx(x=kommune, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kommune_p.xlsx", col_names = FALSE)
+write_xlsx(x=kreis, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/kreis_P.xlsx", col_names = FALSE)
+write_xlsx(x=kommune, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/kommune_p.xlsx", col_names = FALSE)
 
 
 #################################################################################################################################################################
@@ -588,7 +612,7 @@ Crop_share_BW_P_2 <- Crop_share_BW_P_2%>% pivot_wider(names_from = NUTS_2, value
 Crop_share_BW_P_2
 
 
-write_xlsx(x=Crop_share_BW_P_2, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep//18.04.23/crop_share_bw_Zentroide_2.xlsx", col_names = TRUE)
+write_xlsx(x=Crop_share_BW_P_2, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep//01.09.23/crop_share_bw_Zentroide_2.xlsx", col_names = TRUE)
 
 
 
@@ -688,8 +712,13 @@ summary(Cr_bawue_distinct$Gewicht)
 
 Cr_bawue_distinct <-Cr_bawue_distinct %>%  rowid_to_column() %>% mutate(CRid = rowid) %>% select(-rowid) %>% select(CRid, Kombo:Gewicht)
 
+# ACtivate um filtern wie anzuschmeißen, 4 mal das selbe in rotation
+# welche crop rotations sind das die da rausgeschmissen werden? 
+#Cr_to_filter
+#Cr_to_filter %>% filter(CRid %in% Cr_bawue_distinct$CRid) %>% left_join(Cr_bawue_distinct, by="CRid") %>% print(n=Inf)
+
 # Here the filter is happening 
-Cr_bawue_distinct<- Cr_bawue_distinct %>% filter(!CRid %in% Cr_to_filter$CRid)
+#Cr_bawue_distinct<- Cr_bawue_distinct %>% filter(!CRid %in% Cr_to_filter$CRid)
 glimpse(Cr_bawue_distinct)
 
 Cr_bawue_distinct <- Cr_bawue_distinct %>% select(-CRid)
@@ -698,7 +727,9 @@ str(Cr_bawue_distinct)
 
 #Result 24.04.23
 # 39 crop rotations got filtered out if 4 are filterd out, leaving 132
- 
+
+
+
 
 
 
@@ -708,6 +739,11 @@ str(Cr_bawue_distinct)
 rotation_matrix <- Cr_bawue_distinct %>%  rowid_to_column() %>% mutate(CRid = rowid) %>% select(-rowid) %>% select(CRid, Kombo:Gewicht)
 str(rotation_matrix)
 crops <- levels(rotation_matrix$Glied1)
+str(Cr_bawue_distinct)
+
+write_xlsx(x=Cr_bawue_distinct, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Cr_bawue_distinct.xlsx", col_names = TRUE)
+
+
 
 ## Preparation of crop rotation table, taking position of crop in crop rotation into account
 glied1<-  rotation_matrix %>% select(CRid, Glied1, Gewicht) %>% pivot_wider(names_from = Glied1, values_from = Gewicht)
@@ -884,7 +920,7 @@ Rotations_tristan %>% distinct(LAU_ID)
 
 ## Rotation matrix ist eine Liste aller crop rotations die möglich sind. Jede crop rotation ist in jedem Kreis moeglich
 # Create the datasets
-CRid <- c(1:146)
+CRid <- c(1:169)
 regions  <- c("DE111", "DE112", "DE113", "DE114", "DE115", "DE116", "DE117", "DE118", "DE119", "DE11A","DE11B","DE11C","DE11D", 
               "DE121","DE122","DE123","DE124","DE125", "DE126", "DE127", "DE128", "DE129", "DE12A","DE12B", "DE12C",
               "DE131","DE132","DE133","DE134", "DE135","DE136","DE137","DE138","DE139","DE13A",
@@ -925,21 +961,21 @@ head(kommune_CRid)
 # writing out files related to crop rotations and Crop Rota
 
 # Crop_glieder_set
-write_xlsx(x=CR_Glieder, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CR_Glieder.xlsx", col_names = FALSE)
+write_xlsx(x=CR_Glieder, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/CR_Glieder.xlsx", col_names = FALSE)
 
 #crop_CR_matrix, connect crop rotations with crop
-write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/crop_CR_matrix.xlsx", col_names = TRUE)
+write_xlsx(x=crop_CR_matrix, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/crop_CR_matrix.xlsx", col_names = TRUE)
 
 
 #### kommune_CR_ID, welche croprot kommt in welcher kommune vor?
-write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/kommune_CRid.xlsx", col_names = TRUE)
+write_xlsx(x=kommune_CRid, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/kommune_CRid.xlsx", col_names = TRUE)
 
 #### CRs_not_available, welche croprot kommt in welcher kommune NICHT vor?
-write_xlsx(x=CRs_not_available, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CRs_not_available.xlsx", col_names = TRUE)
+write_xlsx(x=CRs_not_available, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/CRs_not_available.xlsx", col_names = T)
 
 
 ## rotation_matrix_full
-write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/rotation_matrix_full.xlsx", col_names = TRUE)
+write_xlsx(x=rotation_matrix_full, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/rotation_matrix_full.xlsx", col_names = TRUE)
 
 
 #######################################################################################################################################################
@@ -992,7 +1028,7 @@ CR_id_crop <- rotation_matrix %>% select(CRid, Gr:ZR)
 
 ##############################################################################################################################################################################
 #### write CR_id_crop
-write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/CR_id_crop.xlsx", col_names = T)
+write_xlsx(x=CR_id_crop, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/CR_id_crop.xlsx", col_names = T)
 
 ###############################################################################################################################################################################
 
@@ -1044,10 +1080,10 @@ price_crop_Fut
 
 
 ## writing out parameters yield and prices
-write_xlsx(x=yields_soilqual_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/yields_soilqual_Ack.xlsx", col_names = T)
-write_xlsx(x=yields_soilqual_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/yields_soilqual_Fut.xlsx", col_names = T)
-write_xlsx(x=price_crop_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/price_crop_Ack.xlsx", col_names = T)
-write_xlsx(x=price_crop_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/price_crop_Fut.xlsx", col_names = T)
+write_xlsx(x=yields_soilqual_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/yields_soilqual_Ack.xlsx", col_names = T)
+write_xlsx(x=yields_soilqual_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/yields_soilqual_Fut.xlsx", col_names = T)
+write_xlsx(x=price_crop_Ack, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/price_crop_Ack.xlsx", col_names = T)
+write_xlsx(x=price_crop_Fut, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/price_crop_Fut.xlsx", col_names = T)
 
 
 ##############################################################################################################################################################################
@@ -1060,8 +1096,8 @@ variable_cost_futterbau <- Futterbau %>% select(`crop abrre`,Intensitaet,`V. Kos
 
 
 ## writing out variable cost parameters
-write_xlsx(x=variable_cost_ackerbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/variable_cost_ackerbau.xlsx", col_names = T)
-write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/variable_cost_futterbau.xlsx", col_names = T)
+write_xlsx(x=variable_cost_ackerbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/variable_cost_ackerbau.xlsx", col_names = T)
+write_xlsx(x=variable_cost_futterbau, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/variable_cost_futterbau.xlsx", col_names = T)
 
 ######################################################################################################################################################
 ## P Verbrauch je crop in abhängigkeit von soil_qual und intensitaet generated out extracted calculation data. 
@@ -1085,7 +1121,7 @@ Duengebedarf_crop_Int<- left_join(new_df, Duengebedarf_crop_Int, by=c("crop abrr
 summary(Duengebedarf_crop_Int)
 
 
-write_xlsx(x=Duengebedarf_crop_Int , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Duengebedarf_crop_Int.xlsx", col_names = T)
+write_xlsx(x=Duengebedarf_crop_Int , path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Duengebedarf_crop_Int.xlsx", col_names = T)
 
 ##################################################################################################################################################################
 
@@ -1123,9 +1159,9 @@ crop_kreis_res <- crop_kreis_res %>% filter(!crop=="B")
 head(crop_kreis_res)
 
 ## write out restriction datasets
-write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/Ka_county.xlsx", col_names = T)
-write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/sm_county.xlsx", col_names = T)
-write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/18.04.23/crop_kreis_res.xlsx", col_names = T)
+write_xlsx(x=Ka_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/Ka_county.xlsx", col_names = T)
+write_xlsx(x=sm_county, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/sm_county.xlsx", col_names = T)
+write_xlsx(x=crop_kreis_res, path = "C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/P_BaWue/Output_GAMS_P_Prep/01.09.23/crop_kreis_res.xlsx", col_names = T)
 
 
 
