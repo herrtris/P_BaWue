@@ -99,22 +99,68 @@ gruenland_bawue_abschlagrechnung %>% group_by(Mowing_mow)%>% summarise(total_gru
 
 ## Read in Gruenland Duengebedarf
 ## Vorerst nehme ich keine weiteren Ausbringungsabschläge für Grünland an
-
-duengebedarf_gruenland<-read_excel("duengebedarf_gruenland.xlsx")
+setwd("C:/Users/User/OneDrive - bwedu/Dokumente/Landwirtschaftliche Betriebslehre/Projekt_P_Bawü/Spatial_data")
+duengebedarf_gruenland<-read_excel("duengebedarf_gruenland.xlsx", sheet = "reduziert_2")
 duengebedarf_gruenland <- duengebedarf_gruenland %>% select(Anzahl_Nutzungen_Grassilage:LeL_Ertragsniveau_netto_dt_TM_je_ha, N,P,K)
 duengebedarf_gruenland
 
-gruenland_bawue_abschlagrechnung <-gruenland_bawue_abschlagrechnung %>% rename(schnitthauefigkeit="Mowing_mow")%>% 
+# Einspiele von Ertragsdaten
+
+Ertrag_gruenland<-read_excel("2022_bawue_gruenlandertraege.xlsx")
+Ertrag_gruenland
+
+# left_join mit duengedaten
+gruenland_bawue_abschlagrechnung_2 <-gruenland_bawue_abschlagrechnung %>% rename(schnitthauefigkeit="Mowing_mow")%>% 
                                    left_join(duengebedarf_gruenland %>% rename(schnitthauefigkeit="Anzahl_Nutzungen_Grassilage"), by="schnitthauefigkeit")
 
-gruenland_bawue_abschlagrechnung <-gruenland_bawue_abschlagrechnung %>% mutate(total_N=FLAECHE__1*N, total_P=FLAECHE__1*P, total_K=FLAECHE__1*K)
+gruenland_bawue_abschlagrechnung_2 <-gruenland_bawue_abschlagrechnung_2 %>% mutate(total_N=FLAECHE__1*N, total_P=FLAECHE__1*P, total_K=FLAECHE__1*K)
+gruenland_bawue_abschlagrechnung_2 %>% count(schnitthauefigkeit)
+gruenland_bawue_abschlagrechnung_2 %>% group_by(schnitthauefigkeit)%>% summarise(total_gruen_2=sum(FLAECHE__1))
+
+# Ertragsvergleich auf Kreisebene mit 2022 Daten
+
+total_Ertrag <-
+gruenland_bawue_abschlagrechnung_2 %>% mutate(total_Ertrag=FLAECHE__1*LeL_Ertragsniveau_netto_dt_TM_je_ha) %>% group_by(NUTS_2) %>%
+summarize(total_area=sum(FLAECHE__1), total_Ertrag_county=sum(total_Ertrag))
+
+
+durchschnittsertraege <-  total_Ertrag %>% mutate(durchschnittsertrag_estimate=total_Ertrag_county/total_area) %>%
+  left_join(Ertrag_gruenland, by="NUTS_2")
+
+durchschnittsertraege %>% print(n=Inf)
+
+durchschnittsertraege %>% summarize(mean(durchschnittsertrag_estimate))
+
+
+
+
+
+
 
 
 ########################################################################################################################################################################################
-county_gruenland_NPK_demand<- gruenland_bawue_abschlagrechnung %>% group_by(NUTS_2) %>% summarize(total_county_N=sum(total_N), total_county_P=sum(total_P), total_county_K=sum(total_K))
+county_gruenland_NPK_demand<- gruenland_bawue_abschlagrechnung_2 %>% group_by(NUTS_2) %>% summarize(total_county_N=sum(total_N), total_county_P=sum(total_P), total_county_K=sum(total_K))
 
 county_gruenland_NPK_demand<- county_gruenland_NPK_demand %>% slice_tail(n=44)
 county_gruenland_NPK_demand<- county_gruenland_NPK_demand %>% rename(N="total_county_N", P="total_county_P", K="total_county_K")
+
+
+county_gruenland_NPK_demand
+
+# vergleiche mit NPK limit - Gesamtproduktion von NPK aus tierischen quellen
+setwd("C:\\Users\\User\\OneDrive - bwedu\\Dokumente\\Landwirtschaftliche Betriebslehre\\Projekt_P_Bawü\\GAMS_P")
+
+NPK_limit_2<- read_excel("NPK_limit_2.xlsx")
+NPK_limit_2<-NPK_limit_2 %>% rename(NUTS_2="...1", Tierart="...2", Produkt="...3")
+
+vergleich_grue<-NPK_limit_2 %>% group_by(NUTS_2) %>% summarize(total_N_supply=sum(N), total_P_supply=sum(P), total_K_supply=(sum(K))) %>% left_join(county_gruenland_NPK_demand, by="NUTS_2")
+
+vergleich_grue<- vergleich_grue %>% mutate(N_share=N/total_N_supply*100, P_share=P/total_P_supply*100, K_share=K/total_K_supply*100)
+
+
+vergleich_grue<-vergleich_grue %>% left_join(Ertrag_gruenland%>% select(NUTS_2, Kreis_name), by="NUTS_2") %>% select(NUTS_2, Kreis_name, total_N_supply:K_share)
+vergleich_grue %>% print(n=Inf)
+
 
 # make content GAMS ready - dont need to modify the excel in any way, does just read into gams
 coloumn_names <-names(county_gruenland_NPK_demand)
